@@ -10,8 +10,7 @@ const USER = {
   email: "fp@test.com",
 };
 
-const seedUser = () =>
-  request(app).post("/api/auth/register").send(USER);
+const seedUser = () => request(app).post("/api/auth/register").send(USER);
 
 const forgot = (body) =>
   request(app).post("/api/auth/forgot-password").send(body);

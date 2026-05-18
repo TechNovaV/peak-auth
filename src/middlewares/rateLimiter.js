@@ -13,7 +13,9 @@ const authLimiter =
         max: 5,
         standardHeaders: true,
         legacyHeaders: false,
-        message: { message: "Quá nhiều yêu cầu, vui lòng thử lại sau 15 phút." },
+        message: {
+          message: "Quá nhiều yêu cầu, vui lòng thử lại sau 15 phút.",
+        },
       });
 
 module.exports = { authLimiter };

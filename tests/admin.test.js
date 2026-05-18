@@ -61,7 +61,9 @@ describe("PATCH /api/admin/users/:id/role", () => {
     adminToken = await loginToken(ADMIN);
 
     const all = await User.find();
-    normalUserId = all.find((u) => u.username === NORMAL.username)._id.toString();
+    normalUserId = all
+      .find((u) => u.username === NORMAL.username)
+      ._id.toString();
     adminUserId = all.find((u) => u.username === ADMIN.username)._id.toString();
   });
 

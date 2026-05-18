@@ -18,7 +18,10 @@ exports.updateRole = async (req, res, next) => {
     const { role } = req.body;
 
     if (!ALLOWED_ROLES.includes(role))
-      throw httpError(400, `Role phải là một trong: ${ALLOWED_ROLES.join(", ")}`);
+      throw httpError(
+        400,
+        `Role phải là một trong: ${ALLOWED_ROLES.join(", ")}`
+      );
 
     // Chặn admin tự hạ quyền chính mình (tránh khóa cả hệ thống nếu chỉ có 1 admin)
     if (req.user.sub === id && role !== "admin")
@@ -35,7 +38,8 @@ exports.updateRole = async (req, res, next) => {
     res.json({ message: "Cập nhật role thành công", user });
   } catch (err) {
     // Nếu id không đúng định dạng ObjectId, Mongoose trả CastError
-    if (err.name === "CastError") return next(httpError(400, "ID không hợp lệ"));
+    if (err.name === "CastError")
+      return next(httpError(400, "ID không hợp lệ"));
     next(err);
   }
 };

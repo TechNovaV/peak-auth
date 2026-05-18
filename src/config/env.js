@@ -1,8 +1,4 @@
-const required = [
-  "MONGODB_URI",
-  "JWT_ACCESS_SECRET",
-  "JWT_REFRESH_SECRET",
-];
+const required = ["MONGODB_URI", "JWT_ACCESS_SECRET", "JWT_REFRESH_SECRET"];
 
 required.forEach((key) => {
   if (!process.env[key]) {

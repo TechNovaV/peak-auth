@@ -14,7 +14,9 @@ const { MONGODB_URI } = require("../config/env");
 const run = async () => {
   const username = process.argv[2];
   if (!username) {
-    console.error("❌ Thiếu tham số username. Vd: node src/scripts/seedAdmin.js vinh_test");
+    console.error(
+      "❌ Thiếu tham số username. Vd: node src/scripts/seedAdmin.js vinh_test"
+    );
     process.exit(1);
   }
 

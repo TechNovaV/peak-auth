@@ -19,7 +19,9 @@ app.get("/health", (req, res) => res.json({ status: "ok" }));
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 
-app.use((req, res) => res.status(404).json({ message: "Không tìm thấy endpoint" }));
+app.use((req, res) =>
+  res.status(404).json({ message: "Không tìm thấy endpoint" })
+);
 app.use(errorHandler);
 
 module.exports = app;

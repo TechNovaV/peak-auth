@@ -74,7 +74,9 @@ exports.register = async (req, res, next) => {
       rawVerifyToken = raw;
       userData.email = email;
       userData.emailVerificationToken = hash;
-      userData.emailVerificationExpires = new Date(Date.now() + VERIFY_TOKEN_TTL_MS);
+      userData.emailVerificationExpires = new Date(
+        Date.now() + VERIFY_TOKEN_TTL_MS
+      );
     }
 
     const user = await User.create(userData);
@@ -110,8 +112,7 @@ exports.login = async (req, res, next) => {
       ? await bcrypt.compare(password, user.password)
       : await bcrypt.compare(password, DUMMY_HASH);
 
-    if (!user || !isMatch)
-      throw httpError(401, "Sai tài khoản hoặc mật khẩu");
+    if (!user || !isMatch) throw httpError(401, "Sai tài khoản hoặc mật khẩu");
 
     const accessToken = signAccessToken(user);
     const refreshToken = signRefreshToken(user);
@@ -154,7 +155,10 @@ exports.logout = async (req, res, next) => {
     const token = req.cookies?.refreshToken;
     if (!token) return res.sendStatus(204);
 
-    await User.findOneAndUpdate({ refreshToken: token }, { refreshToken: null });
+    await User.findOneAndUpdate(
+      { refreshToken: token },
+      { refreshToken: null }
+    );
     res.clearCookie("refreshToken");
     res.json({ message: "Đăng xuất thành công" });
   } catch (err) {
@@ -184,9 +188,7 @@ exports.forgotPassword = async (req, res, next) => {
     if (!username && !email)
       throw httpError(400, "Cần cung cấp username hoặc email");
 
-    const query = email
-      ? { email: String(email).toLowerCase() }
-      : { username };
+    const query = email ? { email: String(email).toLowerCase() } : { username };
     const user = await User.findOne(query);
 
     // Vẫn trả 200 dù user không tồn tại — không leak thông tin
@@ -206,7 +208,9 @@ exports.forgotPassword = async (req, res, next) => {
       }).catch((e) => console.error("[Mailer error]", e.message));
     } else {
       // User chưa có email — log link ra console để dev tự copy
-      console.log(`📧 [DEV] Reset link cho '${user.username}': /reset-password?token=${raw}`);
+      console.log(
+        `📧 [DEV] Reset link cho '${user.username}': /reset-password?token=${raw}`
+      );
     }
 
     const payload = { message: FORGOT_GENERIC_MSG };
@@ -304,7 +308,9 @@ exports.resetPassword = async (req, res, next) => {
     user.refreshToken = null; // Revoke mọi session đang mở
     await user.save();
 
-    res.json({ message: "Đặt lại mật khẩu thành công. Vui lòng đăng nhập lại." });
+    res.json({
+      message: "Đặt lại mật khẩu thành công. Vui lòng đăng nhập lại.",
+    });
   } catch (err) {
     next(err);
   }

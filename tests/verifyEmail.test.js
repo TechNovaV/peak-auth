@@ -10,8 +10,7 @@ const USER = {
   email: "verify@test.com",
 };
 
-const seedUser = () =>
-  request(app).post("/api/auth/register").send(USER);
+const seedUser = () => request(app).post("/api/auth/register").send(USER);
 
 const verifyEmail = (token) =>
   request(app).post("/api/auth/verify-email").send({ token });
@@ -88,10 +87,8 @@ describe("POST /api/auth/verify-email", () => {
 describe("POST /api/auth/resend-verification", () => {
   beforeEach(seedUser);
 
-  it("email pending verify → 200 + verifyToken mới, vô hiệu hóa token cũ", async () => {
-    const firstRes = await seedUser(); // user đã có sẵn từ beforeEach, lần này lỗi 409
-    // Lấy verify token lần đầu từ user đã có
-    // Vì seedUser ở beforeEach đã trả token, nhưng chúng ta không lưu — gọi resend
+  it("email pending verify → 200 + verifyToken mới", async () => {
+    // user đã có sẵn từ beforeEach
     const resendRes = await resend({ email: USER.email });
     expect(resendRes.status).toBe(200);
     expect(resendRes.body.verifyToken).toEqual(expect.any(String));
@@ -105,13 +102,11 @@ describe("POST /api/auth/resend-verification", () => {
 
   it("user đã verify rồi → 200 generic, KHÔNG có token", async () => {
     // Verify trước
-    const r = await request(app)
-      .post("/api/auth/register")
-      .send({
-        username: "already_verified",
-        password: "password123",
-        email: "av@test.com",
-      });
+    const r = await request(app).post("/api/auth/register").send({
+      username: "already_verified",
+      password: "password123",
+      email: "av@test.com",
+    });
     await verifyEmail(r.body.verifyToken);
 
     const res = await resend({ email: "av@test.com" });
@@ -131,13 +126,11 @@ describe("POST /api/auth/resend-verification", () => {
 
   it("token cũ bị vô hiệu khi resend → token mới mới verify được", async () => {
     // Register user fresh
-    const reg = await request(app)
-      .post("/api/auth/register")
-      .send({
-        username: "rotation_user",
-        password: "password123",
-        email: "rot@test.com",
-      });
+    const reg = await request(app).post("/api/auth/register").send({
+      username: "rotation_user",
+      password: "password123",
+      email: "rot@test.com",
+    });
     const oldToken = reg.body.verifyToken;
 
     // Resend → token mới
