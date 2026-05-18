@@ -16,6 +16,8 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: HUSKY
+        value: "0" # Disable husky on Render (no .git folder, no devDeps)
       - key: MONGODB_URI
         sync: false # giá trị thật sẽ nhập trong dashboard
       - key: JWT_ACCESS_SECRET
