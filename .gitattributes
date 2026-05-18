@@ -1,0 +1,8 @@
+# Tất cả text file dùng LF (CI chạy Ubuntu, Windows dev sẽ tự convert)
+* text=auto eol=lf
+
+# Binary
+*.png binary
+*.jpg binary
+*.ico binary
+*.pdf binary
