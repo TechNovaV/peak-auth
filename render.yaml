@@ -1,0 +1,26 @@
+# Render Infrastructure-as-Code
+# Khi connect repo lần đầu, Render đọc file này và tự cấu hình service.
+# Xem: https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: peak-auth
+    runtime: node
+    region: singapore # gần Việt Nam nhất
+    plan: free
+    branch: main
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        sync: false # giá trị thật sẽ nhập trong dashboard
+      - key: JWT_ACCESS_SECRET
+        generateValue: true # Render tự sinh chuỗi random 32 ký tự
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: CLIENT_URL
+        value: http://localhost:5173 # tạm thời cho dev, sau đổi
