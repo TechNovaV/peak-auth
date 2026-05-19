@@ -987,7 +987,7 @@ body {
 }
 
 .peak-logo-img {
-  width: 160px;
+  width: 260px;
   max-width: 100%;
   display: block;
   margin-bottom: 4px;
@@ -1152,7 +1152,7 @@ body {
     border-radius: 16px;
   }
   .peak-logo-img {
-    width: 130px;
+    width: 200px;
   }
 }
 
