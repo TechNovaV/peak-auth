@@ -1,5 +1,9 @@
 const { NODE_ENV, CLIENT_URL } = require("../config/env");
 
+// CLIENT_URL có thể là nhiều origin phân cách bằng dấu phẩy.
+// Cho mailer link: dùng cái đầu tiên (assumption: đó là frontend chính).
+const PRIMARY_CLIENT_URL = CLIENT_URL.split(",")[0].trim();
+
 /**
  * Stub mailer — hiện log ra console.
  *
@@ -25,7 +29,7 @@ const sendMail = async ({ to, subject, html, text }) => {
 };
 
 const sendResetPasswordEmail = async ({ to, username, resetToken }) => {
-  const link = `${CLIENT_URL}/reset-password?token=${resetToken}`;
+  const link = `${PRIMARY_CLIENT_URL}/reset-password?token=${resetToken}`;
   return sendMail({
     to,
     subject: "Đặt lại mật khẩu",
@@ -39,7 +43,7 @@ Nếu không phải bạn, hãy bỏ qua email này.`,
 };
 
 const sendVerificationEmail = async ({ to, username, verifyToken }) => {
-  const link = `${CLIENT_URL}/verify-email?token=${verifyToken}`;
+  const link = `${PRIMARY_CLIENT_URL}/verify-email?token=${verifyToken}`;
   return sendMail({
     to,
     subject: "Xác minh địa chỉ email",
