@@ -974,7 +974,7 @@ body {
   max-width: 400px;
   background: #1e0b3a;
   border-radius: 20px;
-  padding: 32px 30px;
+  padding: 36px 34px;
   box-shadow:
     0 0 0 1px rgba(255, 122, 240, 0.2) inset,
     0 24px 60px -16px rgba(0, 0, 0, 0.6),
@@ -983,28 +983,29 @@ body {
 
 .peak-card-header {
   text-align: left;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .peak-logo-img {
   width: 260px;
   max-width: 100%;
   display: block;
-  margin-bottom: 4px;
+  margin-bottom: 10px;
   mix-blend-mode: screen;
 }
 
 .peak-subtitle {
-  color: rgba(255, 255, 255, 0.55);
-  font-size: 14px;
-  font-weight: 500;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 17px;
+  font-weight: 400;
+  letter-spacing: 0.1px;
 }
 
 .peak-desc {
   color: rgba(255, 255, 255, 0.55);
-  font-size: 13px;
-  line-height: 1.55;
-  margin-top: -4px;
+  font-size: 14px;
+  line-height: 1.6;
+  margin-top: -2px;
 }
 
 .peak-success {
@@ -1030,39 +1031,44 @@ body {
 
 /* form tweaks (scoped under peak-card) */
 .peak-card .auth-form {
-  gap: 14px;
+  gap: 16px;
 }
 
 .peak-card .field label {
-  color: rgba(255, 255, 255, 0.85);
-  font-weight: 600;
-  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+  font-size: 13px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
 }
 
 .peak-card .field input {
-  background: rgba(255, 255, 255, 0.07);
-  border: 1px solid rgba(255, 122, 240, 0.3);
-  border-radius: 10px;
-  padding: 13px 14px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 122, 240, 0.25);
+  border-radius: 12px;
+  padding: 13px 16px;
   font-size: 15px;
+  font-family: inherit;
   color: #fff;
   transition: all 0.2s ease;
 }
 
 .peak-card .field input::placeholder {
-  color: rgba(255, 255, 255, 0.28);
+  color: rgba(255, 255, 255, 0.22);
+  font-size: 14px;
 }
 
 .peak-card .field input:focus {
-  border-color: rgba(255, 122, 240, 0.7);
-  box-shadow: 0 0 0 4px rgba(255, 122, 240, 0.12);
-  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 122, 240, 0.65);
+  box-shadow: 0 0 0 3px rgba(255, 122, 240, 0.1);
+  background: rgba(255, 255, 255, 0.09);
   outline: none;
 }
 
 .peak-card .checkbox {
-  color: rgba(255, 255, 255, 0.65);
-  font-weight: 500;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 14px;
+  font-weight: 400;
 }
 
 .peak-card .checkbox input {
@@ -1090,9 +1096,9 @@ body {
   border: none;
   border-radius: 12px;
   padding: 14px;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
-  letter-spacing: 0.3px;
+  letter-spacing: 1px;
   color: #fff;
   cursor: pointer;
   transition: transform 0.1s ease, box-shadow 0.2s ease;
@@ -1115,8 +1121,10 @@ body {
 }
 
 .peak-card .auth-footer {
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 14px;
   margin-top: 4px;
+  text-align: center;
 }
 
 /* brand logo in nav */
