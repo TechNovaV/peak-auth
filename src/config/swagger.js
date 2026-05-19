@@ -16,7 +16,10 @@ const options = {
         name: "GitHub Repo",
         url: "https://github.com/TechNovaV/peak-auth",
       },
-      license: { name: "MIT" },
+      license: {
+        name: "MIT",
+        url: "https://github.com/TechNovaV/peak-auth/blob/main/LICENSE",
+      },
     },
     servers: [
       { url: "http://localhost:3000", description: "Local dev" },
