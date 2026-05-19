@@ -3,65 +3,45 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Đặt lại mật khẩu - Social App</title>
+    <title>Đặt lại mật khẩu - PEAK!</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="style.css" />
   </head>
-  <body>
-    <main class="auth-container">
-      <section class="auth-card">
-        <header class="auth-header">
-          <h1 class="logo">SocialApp</h1>
-          <p class="subtitle">Đặt lại mật khẩu</p>
-        </header>
+  <body class="peak-body">
+    <main class="peak-split">
+      <section class="peak-art" aria-hidden="true">
+        <img src="images/left-bg.png" alt="" class="peak-art-img" draggable="false" />
+      </section>
 
-        <form class="auth-form" id="resetForm" novalidate>
-          <div
-            id="tokenError"
-            class="hidden"
-            style="
-              margin-bottom: 16px;
-              padding: 12px;
-              background: #fef2f2;
-              border-radius: 8px;
-              color: #b91c1c;
-              font-size: 14px;
-            "
-          ></div>
+      <section class="peak-form-wrap">
+        <div class="peak-card">
+          <header class="peak-card-header">
+            <img src="images/peak-logo.png" alt="PEAK!" class="peak-logo-img" />
+            <p class="peak-subtitle">Đặt lại mật khẩu</p>
+          </header>
 
-          <div class="field">
-            <label for="password">Mật khẩu mới</label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              placeholder="Ít nhất 8 ký tự"
-              minlength="8"
-              required
-              autocomplete="new-password"
-            />
-            <small class="error" id="passwordError"></small>
-          </div>
+          <form class="auth-form" id="resetForm" novalidate>
+            <div id="tokenError" class="hidden peak-error-box"></div>
 
-          <div class="field">
-            <label for="confirmPassword">Nhập lại mật khẩu</label>
-            <input
-              type="password"
-              id="confirmPassword"
-              name="confirmPassword"
-              placeholder="Nhập lại mật khẩu"
-              minlength="8"
-              required
-              autocomplete="new-password"
-            />
-            <small class="error" id="confirmPasswordError"></small>
-          </div>
+            <div class="field">
+              <label for="password">Mật khẩu mới</label>
+              <input type="password" id="password" name="password" placeholder="Ít nhất 8 ký tự" minlength="8" required autocomplete="new-password" />
+              <small class="error" id="passwordError"></small>
+            </div>
 
-          <button type="submit" class="btn-primary">Đặt lại mật khẩu</button>
+            <div class="field">
+              <label for="confirmPassword">Nhập lại mật khẩu</label>
+              <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Nhập lại mật khẩu" minlength="8" required autocomplete="new-password" />
+              <small class="error" id="confirmPasswordError"></small>
+            </div>
 
-          <p class="auth-footer">
-            <a href="index.html" class="link">Quay lại đăng nhập</a>
-          </p>
-        </form>
+            <button type="submit" class="btn-primary btn-neon">Đặt lại mật khẩu</button>
+
+            <p class="auth-footer">
+              <a href="index.html" class="link link-neon">Quay lại đăng nhập</a>
+            </p>
+          </form>
+        </div>
       </section>
     </main>
 
@@ -70,3 +50,4 @@
     <script src="script.js"></script>
   </body>
 </html>
+

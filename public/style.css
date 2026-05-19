@@ -928,13 +928,14 @@ body {
 .peak-body {
   font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     sans-serif;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   background: #0d0420;
-  overflow-x: hidden;
 }
 
 .peak-split {
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0;
@@ -953,6 +954,9 @@ body {
   object-fit: cover;
   object-position: center;
   display: block;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
 /* ===== RIGHT — FORM PANEL ===== */
@@ -960,42 +964,75 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 40px 32px;
+  padding: 24px 28px;
   background: #120826;
+  overflow-y: auto;
 }
 
 .peak-card {
   width: 100%;
-  max-width: 440px;
+  max-width: 400px;
   background: #1e0b3a;
-  border-radius: 22px;
-  padding: 44px 38px;
+  border-radius: 20px;
+  padding: 32px 30px;
   box-shadow:
     0 0 0 1px rgba(255, 122, 240, 0.2) inset,
-    0 30px 80px -20px rgba(0, 0, 0, 0.6),
-    0 0 50px rgba(233, 77, 226, 0.15);
+    0 24px 60px -16px rgba(0, 0, 0, 0.6),
+    0 0 40px rgba(233, 77, 226, 0.12);
 }
 
 .peak-card-header {
   text-align: left;
-  margin-bottom: 28px;
+  margin-bottom: 20px;
 }
 
 .peak-logo-img {
-  width: 200px;
+  width: 160px;
   max-width: 100%;
   display: block;
-  margin-bottom: 6px;
+  margin-bottom: 4px;
   mix-blend-mode: screen;
 }
 
 .peak-subtitle {
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 15px;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 14px;
   font-weight: 500;
 }
 
+.peak-desc {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 13px;
+  line-height: 1.55;
+  margin-top: -4px;
+}
+
+.peak-success {
+  margin-top: 4px;
+  padding: 11px 14px;
+  background: rgba(76, 242, 163, 0.12);
+  border: 1px solid rgba(76, 242, 163, 0.35);
+  border-radius: 10px;
+  color: #4cf2a3;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.peak-error-box {
+  margin-bottom: 12px;
+  padding: 11px 14px;
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: 10px;
+  color: #fca5a5;
+  font-size: 13px;
+}
+
 /* form tweaks (scoped under peak-card) */
+.peak-card .auth-form {
+  gap: 14px;
+}
+
 .peak-card .field label {
   color: rgba(255, 255, 255, 0.85);
   font-weight: 600;
@@ -1082,29 +1119,40 @@ body {
   margin-top: 4px;
 }
 
+/* brand logo in nav */
+.brand-logo {
+  height: 26px;
+  display: inline-block;
+  vertical-align: middle;
+  mix-blend-mode: multiply;
+  filter: invert(1) brightness(0.3);
+}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 900px) {
+  .peak-body {
+    height: auto;
+    overflow: auto;
+  }
   .peak-split {
+    height: auto;
     grid-template-columns: 1fr;
   }
   .peak-art {
-    min-height: 360px;
+    height: 300px;
   }
   .peak-form-wrap {
-    padding: 32px 20px;
+    padding: 28px 20px;
   }
 }
 
 @media (max-width: 480px) {
   .peak-card {
-    padding: 32px 24px;
-    border-radius: 18px;
+    padding: 24px 20px;
+    border-radius: 16px;
   }
   .peak-logo-img {
-    width: 160px;
-  }
-  .peak-art {
-    min-height: 260px;
+    width: 130px;
   }
 }
 
