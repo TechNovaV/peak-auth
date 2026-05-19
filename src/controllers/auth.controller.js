@@ -285,13 +285,19 @@ exports.deleteAccount = async (req, res, next) => {
 
 exports.updateProfile = async (req, res, next) => {
   try {
-    const { username, email, fullName } = req.body;
+    const { username, email, fullName, bio, school } = req.body;
+    // `class` là từ khóa JS, phải truy cập gián tiếp
+    const userClass = req.body.class;
 
-    if (username === undefined && email === undefined && fullName === undefined)
-      throw httpError(
-        400,
-        "Cần cung cấp ít nhất username, email hoặc fullName"
-      );
+    if (
+      username === undefined &&
+      email === undefined &&
+      fullName === undefined &&
+      bio === undefined &&
+      school === undefined &&
+      userClass === undefined
+    )
+      throw httpError(400, "Cần cung cấp ít nhất 1 field để cập nhật");
 
     const user = await User.findById(req.user.sub);
     if (!user) throw httpError(404, "Không tìm thấy người dùng");
@@ -303,6 +309,19 @@ exports.updateProfile = async (req, res, next) => {
         throw httpError(400, "fullName không hợp lệ");
       user.fullName = fullName.trim();
     }
+
+    // Validate text fields với độ dài tối đa
+    const setTextField = (field, value, max, label) => {
+      if (value === undefined) return;
+      if (typeof value !== "string")
+        throw httpError(400, `${label} không hợp lệ`);
+      if (value.length > max)
+        throw httpError(400, `${label} không quá ${max} ký tự`);
+      user[field] = value.trim();
+    };
+    setTextField("bio", bio, 500, "Bio");
+    setTextField("school", school, 100, "School");
+    setTextField("class", userClass, 50, "Class");
 
     // Validate + apply username
     if (username !== undefined && username !== user.username) {

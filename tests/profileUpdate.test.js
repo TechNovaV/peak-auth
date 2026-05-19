@@ -139,6 +139,44 @@ describe("PATCH /api/auth/profile", () => {
     });
   });
 
+  describe("Text fields: bio / school / class", () => {
+    it("update bio + school + class → 200, /me trả về đúng", async () => {
+      const token = await seedAndLogin();
+      const res = await updateProfile(token, {
+        bio: "Hello world",
+        school: "Đại học Bách Khoa",
+        class: "K65 CNTT",
+      });
+      expect(res.status).toBe(200);
+      expect(res.body.user.bio).toBe("Hello world");
+      expect(res.body.user.school).toBe("Đại học Bách Khoa");
+      expect(res.body.user.class).toBe("K65 CNTT");
+    });
+
+    it("chỉ update bio, các field khác giữ nguyên", async () => {
+      const token = await seedAndLogin();
+      await updateProfile(token, { bio: "Original", school: "ABC" });
+      const res = await updateProfile(token, { bio: "Changed" });
+      expect(res.status).toBe(200);
+      expect(res.body.user.bio).toBe("Changed");
+      expect(res.body.user.school).toBe("ABC");
+    });
+
+    it("bio quá 500 ký tự → 400", async () => {
+      const token = await seedAndLogin();
+      const longBio = "a".repeat(501);
+      const res = await updateProfile(token, { bio: longBio });
+      expect(res.status).toBe(400);
+      expect(res.body.message).toMatch(/500/);
+    });
+
+    it("class không phải string → 400", async () => {
+      const token = await seedAndLogin();
+      const res = await updateProfile(token, { class: 12345 });
+      expect(res.status).toBe(400);
+    });
+  });
+
   describe("Security", () => {
     it("response không chứa password / refreshToken / verifyToken hash", async () => {
       const token = await seedAndLogin();
