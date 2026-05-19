@@ -401,13 +401,13 @@ if (homeRoot) {
           </header>
           <div class="post-body">${escapeHtml(post.content)}</div>
           <footer class="post-footer">
+            <div class="${likeCountClass}" data-count="${post.likeCount}">
+              ${post.likeCount > 0 ? "❤️ " + post.likeCount : ""}
+            </div>
             <div class="post-actions">
               <button class="${likeClass}">${likeIcon} ${t("post.like")}</button>
               <button class="post-btn">💬 ${t("post.comment")}</button>
               <button class="post-btn">↗ ${t("post.share")}</button>
-            </div>
-            <div class="${likeCountClass}" data-count="${post.likeCount}">
-              ${post.likeCount > 0 ? "❤️ " + post.likeCount : ""}
             </div>
           </footer>
         </article>
