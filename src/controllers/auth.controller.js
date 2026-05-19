@@ -1,7 +1,10 @@
+const fs = require("fs");
+const path = require("path");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
 const User = require("../models/User");
+const { AVATAR_DIR } = require("../middlewares/upload");
 const {
   validateCredentials,
   validateUsername,
@@ -210,6 +213,57 @@ exports.me = async (req, res, next) => {
     );
     if (!user) throw httpError(404, "Không tìm thấy người dùng");
     res.json({ user });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// Best-effort xóa file cũ trên disk (không block nếu lỗi — vd file không tồn tại)
+const deleteAvatarFile = (avatarUrl) => {
+  if (!avatarUrl) return;
+  const filename = path.basename(avatarUrl);
+  const filepath = path.join(AVATAR_DIR, filename);
+  fs.unlink(filepath, () => {});
+};
+
+exports.uploadAvatar = async (req, res, next) => {
+  try {
+    if (!req.file) throw httpError(400, "Không có file được upload");
+
+    const user = await User.findById(req.user.sub);
+    if (!user) {
+      // Cleanup file vừa upload nếu user không còn
+      deleteAvatarFile(`/uploads/avatars/${req.file.filename}`);
+      throw httpError(404, "Không tìm thấy người dùng");
+    }
+
+    // Xóa avatar cũ trên disk
+    if (user.avatarUrl) deleteAvatarFile(user.avatarUrl);
+
+    user.avatarUrl = `/uploads/avatars/${req.file.filename}`;
+    await user.save();
+
+    res.json({
+      message: "Tải ảnh đại diện thành công",
+      avatarUrl: user.avatarUrl,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.deleteAvatar = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.sub);
+    if (!user) throw httpError(404, "Không tìm thấy người dùng");
+
+    if (user.avatarUrl) {
+      deleteAvatarFile(user.avatarUrl);
+      user.avatarUrl = "";
+      await user.save();
+    }
+
+    res.json({ message: "Đã xóa ảnh đại diện" });
   } catch (err) {
     next(err);
   }

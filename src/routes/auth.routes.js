@@ -2,6 +2,10 @@ const router = require("express").Router();
 const authController = require("../controllers/auth.controller");
 const { verifyToken } = require("../middlewares/auth");
 const { authLimiter } = require("../middlewares/rateLimiter");
+const {
+  uploadAvatar,
+  handleAvatarUploadErrors,
+} = require("../middlewares/upload");
 
 /**
  * @openapi
@@ -394,5 +398,56 @@ router.get("/sessions", verifyToken, authController.listSessions);
  *       404: { $ref: '#/components/responses/NotFound' }
  */
 router.delete("/sessions/:id", verifyToken, authController.revokeSession);
+
+/**
+ * @openapi
+ * /api/auth/avatar:
+ *   post:
+ *     tags: [User]
+ *     summary: Upload ảnh đại diện
+ *     description: |
+ *       Upload file ảnh (JPG/PNG/WebP, tối đa 2MB). Backend lưu file vào `uploads/avatars/`
+ *       và set `user.avatarUrl`. Avatar cũ (nếu có) sẽ bị xóa khỏi disk.
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               avatar:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       200:
+ *         description: Upload thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message: { type: string }
+ *                 avatarUrl: { type: string, example: "/uploads/avatars/abc-xyz.png" }
+ *       400: { $ref: '#/components/responses/BadRequest' }
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ *   delete:
+ *     tags: [User]
+ *     summary: Xóa ảnh đại diện
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200: { description: Xóa thành công }
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ */
+router.post(
+  "/avatar",
+  verifyToken,
+  uploadAvatar.single("avatar"),
+  handleAvatarUploadErrors,
+  authController.uploadAvatar
+);
+router.delete("/avatar", verifyToken, authController.deleteAvatar);
 
 module.exports = router;

@@ -161,6 +161,107 @@ if (registerForm) {
 }
 
 // ============================================================
+//  FORGOT PASSWORD FORM
+// ============================================================
+const forgotForm = document.getElementById("forgotForm");
+if (forgotForm) {
+  forgotForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const email = document.getElementById("email").value.trim();
+    const submitBtn = forgotForm.querySelector("button[type=submit]");
+    const successMsg = document.getElementById("successMsg");
+
+    clearError("email");
+
+    if (!email) {
+      showError("email", "Vui lòng nhập email");
+      return;
+    }
+    if (!isValidEmail(email)) {
+      showError("email", "Email không hợp lệ");
+      return;
+    }
+
+    setLoading(submitBtn, true);
+    const { ok, data } = await auth.forgotPassword({ email });
+    setLoading(submitBtn, false, "Gửi link");
+
+    if (!ok) {
+      showError("email", data.message || "Có lỗi xảy ra");
+      return;
+    }
+
+    // Anti-enumeration: backend luôn trả 200 dù email có/không tồn tại
+    let msg = "✓ " + data.message;
+    // Dev mode: backend trả luôn resetToken để dễ test
+    if (data.resetToken) {
+      msg +=
+        '<br><br><strong>Dev mode link:</strong><br><a href="reset.html?token=' +
+        data.resetToken +
+        '" class="link">reset.html?token=' +
+        data.resetToken.substring(0, 16) +
+        "...</a>";
+    }
+    successMsg.innerHTML = msg;
+    successMsg.classList.remove("hidden");
+  });
+}
+
+// ============================================================
+//  RESET PASSWORD FORM
+// ============================================================
+const resetForm = document.getElementById("resetForm");
+if (resetForm) {
+  // Đọc token từ URL ?token=xxx
+  const urlParams = new URLSearchParams(window.location.search);
+  const token = urlParams.get("token");
+  const tokenErrorEl = document.getElementById("tokenError");
+
+  if (!token) {
+    tokenErrorEl.textContent =
+      "Link đặt lại mật khẩu không hợp lệ (thiếu token).";
+    tokenErrorEl.classList.remove("hidden");
+    resetForm.querySelector("button[type=submit]").disabled = true;
+  }
+
+  resetForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!token) return;
+
+    const password = document.getElementById("password").value;
+    const confirmPassword = document.getElementById("confirmPassword").value;
+    const submitBtn = resetForm.querySelector("button[type=submit]");
+
+    clearAllErrors(["password", "confirmPassword"]);
+
+    let valid = true;
+    if (!password || password.length < 8) {
+      showError("password", "Mật khẩu phải có ít nhất 8 ký tự");
+      valid = false;
+    }
+    if (password !== confirmPassword) {
+      showError("confirmPassword", "Mật khẩu nhập lại không khớp");
+      valid = false;
+    }
+    if (!valid) return;
+
+    setLoading(submitBtn, true);
+    const { ok, data } = await auth.resetPassword({ token, password });
+    setLoading(submitBtn, false, "Đặt lại mật khẩu");
+
+    if (!ok) {
+      tokenErrorEl.textContent = data.message || "Đặt lại thất bại";
+      tokenErrorEl.classList.remove("hidden");
+      return;
+    }
+
+    alert("✓ Đã đổi mật khẩu thành công! Vui lòng đăng nhập lại.");
+    window.location.href = "index.html";
+  });
+}
+
+// ============================================================
 //  DASHBOARD GUARD (trang debug cũ — vẫn giữ)
 // ============================================================
 const dashboardRoot = document.getElementById("dashboardRoot");
@@ -209,7 +310,7 @@ if (homeRoot) {
     const user = data.user;
     const fullName = user.fullName || user.username || "Bạn";
     const email = user.email || "";
-    const avatarUrl = getDefaultAvatar(fullName);
+    const avatarUrl = user.avatarUrl || getDefaultAvatar(fullName);
 
     // 2) Đổ data vào nav/sidebar/composer
     const setImg = (id) => {
@@ -254,10 +355,151 @@ if (homeRoot) {
       window.location.href = "index.html";
     });
 
-    // 5) Composer placeholder
-    document.getElementById("composerInput")?.addEventListener("click", () => {
-      alert("Tính năng đăng bài sẽ có ở Sprint sau nhé!");
+    // 5) POSTS FEATURE (Phase 5)
+    // --- Helpers cho render post ---
+    const currentUserId = user._id;
+    const postsContainer = document.getElementById("postsContainer");
+
+    // "5 phút trước", "2 giờ trước", "hôm qua"
+    function timeAgo(dateStr) {
+      const seconds = Math.floor((Date.now() - new Date(dateStr)) / 1000);
+      if (seconds < 60) return "vừa xong";
+      const minutes = Math.floor(seconds / 60);
+      if (minutes < 60) return minutes + " phút trước";
+      const hours = Math.floor(minutes / 60);
+      if (hours < 24) return hours + " giờ trước";
+      const days = Math.floor(hours / 24);
+      if (days < 7) return days + " ngày trước";
+      return new Date(dateStr).toLocaleDateString("vi-VN");
+    }
+
+    // Escape HTML để chống XSS khi insert content vào DOM
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function renderPost(post) {
+      const authorName = post.author.fullName || post.author.username;
+      const authorAvatar =
+        post.author.avatarUrl || getDefaultAvatar(authorName);
+      const canDelete =
+        post.author._id === currentUserId || user.role === "admin";
+      const likeIcon = post.likedByMe ? "❤️" : "♡";
+      const likeClass = post.likedByMe ? "post-action liked" : "post-action";
+
+      return `
+        <article class="post card" data-id="${post._id}">
+          <header class="post-header">
+            <img class="post-avatar" src="${authorAvatar}" alt="" />
+            <div>
+              <div class="post-author">${escapeHtml(authorName)}</div>
+              <div class="post-meta">${timeAgo(post.createdAt)}</div>
+            </div>
+            ${
+              canDelete
+                ? '<button class="post-more delete-btn" title="Xóa bài">⋯</button>'
+                : ""
+            }
+          </header>
+          <div class="post-body">${escapeHtml(post.content)}</div>
+          <footer class="post-footer">
+            <button class="${likeClass} like-btn">
+              ${likeIcon} Thích <span class="like-count">${post.likeCount}</span>
+            </button>
+            <button class="post-action">💬 Bình luận</button>
+            <button class="post-action">↪ Chia sẻ</button>
+          </footer>
+        </article>
+      `;
+    }
+
+    async function loadFeed() {
+      const { ok, data } = await posts.list();
+      if (!ok) {
+        postsContainer.innerHTML =
+          '<p style="text-align:center;color:#dc2626;padding:24px">Lỗi tải bài viết</p>';
+        return;
+      }
+      if (data.posts.length === 0) {
+        postsContainer.innerHTML =
+          '<p style="text-align:center;color:#6b7280;padding:24px">Chưa có bài viết nào. Hãy là người đầu tiên!</p>';
+        return;
+      }
+      postsContainer.innerHTML = data.posts.map(renderPost).join("");
+    }
+
+    // Composer: đăng bài
+    const composerForm = document.getElementById("composerForm");
+    const composerInput = document.getElementById("composerInput");
+    const composerCharCount = document.getElementById("composerCharCount");
+    const composerSubmit = document.getElementById("composerSubmit");
+
+    composerInput.addEventListener("input", () => {
+      composerCharCount.textContent = composerInput.value.length + " / 1000";
     });
+
+    composerForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const content = composerInput.value.trim();
+      if (!content) return;
+      if (content.length > 1000) {
+        alert("Bài viết tối đa 1000 ký tự");
+        return;
+      }
+
+      setLoading(composerSubmit, true);
+      const { ok, data: resp } = await posts.create(content);
+      setLoading(composerSubmit, false, "Đăng");
+
+      if (!ok) {
+        alert("Lỗi: " + (resp.message || "Đăng bài thất bại"));
+        return;
+      }
+
+      // Render post mới lên đầu feed
+      composerInput.value = "";
+      composerCharCount.textContent = "0 / 1000";
+      const existingHtml = postsContainer.querySelector("article")
+        ? postsContainer.innerHTML
+        : "";
+      postsContainer.innerHTML = renderPost(resp.post) + existingHtml;
+    });
+
+    // Event delegation: 1 listener cho cả container, xử lý like/delete
+    postsContainer.addEventListener("click", async (e) => {
+      const article = e.target.closest("article.post");
+      if (!article) return;
+      const postId = article.dataset.id;
+
+      // Like button
+      if (e.target.closest(".like-btn")) {
+        const btn = e.target.closest(".like-btn");
+        const { ok, data: resp } = await posts.toggleLike(postId);
+        if (!ok) return;
+        btn.querySelector(".like-count").textContent = resp.likeCount;
+        if (resp.liked) {
+          btn.classList.add("liked");
+          btn.innerHTML = btn.innerHTML.replace("♡", "❤️");
+        } else {
+          btn.classList.remove("liked");
+          btn.innerHTML = btn.innerHTML.replace("❤️", "♡");
+        }
+        return;
+      }
+
+      // Delete button
+      if (e.target.closest(".delete-btn")) {
+        if (!confirm("Xóa bài viết này?")) return;
+        const { ok } = await posts.remove(postId);
+        if (ok) article.remove();
+        return;
+      }
+    });
+
+    // Load feed lần đầu
+    loadFeed();
   })();
 }
 
@@ -301,16 +543,52 @@ if (profileRoot) {
     if (schoolInput) schoolInput.value = user.school || "";
     if (classInput) classInput.value = user.class || "";
 
-    document.getElementById("profileAvatar").src = getDefaultAvatar(fullName);
+    // Avatar: dùng URL thật nếu có, fallback ui-avatars
+    const avatarImg = document.getElementById("profileAvatar");
+    avatarImg.src = user.avatarUrl || getDefaultAvatar(fullName);
     profileRoot.classList.remove("hidden");
 
-    // Avatar upload sẽ làm ở Phase 3 — tạm disable
-    const avatarHint = document.getElementById("avatarHint");
-    if (avatarHint) {
-      avatarHint.textContent = "Upload ảnh đại diện sẽ có ở Phase 3";
-    }
+    // Phase 3: Avatar upload real
     const avatarInput = document.getElementById("avatarInput");
-    if (avatarInput) avatarInput.disabled = true;
+    const avatarHint = document.getElementById("avatarHint");
+    if (avatarHint)
+      avatarHint.textContent =
+        "Bấm icon máy ảnh để đổi ảnh đại diện (tối đa 2MB)";
+
+    avatarInput?.addEventListener("change", async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      if (file.size > 2 * 1024 * 1024) {
+        avatarHint.textContent = "❌ Ảnh quá lớn (tối đa 2MB)";
+        avatarHint.style.color = "var(--error)";
+        avatarInput.value = "";
+        return;
+      }
+      if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+        avatarHint.textContent = "❌ Chỉ JPG, PNG hoặc WebP";
+        avatarHint.style.color = "var(--error)";
+        avatarInput.value = "";
+        return;
+      }
+
+      avatarHint.textContent = "Đang tải lên...";
+      avatarHint.style.color = "var(--text-light)";
+
+      const { ok, data: resp } = await auth.uploadAvatar(file);
+
+      if (!ok) {
+        avatarHint.textContent = "❌ " + (resp.message || "Upload thất bại");
+        avatarHint.style.color = "var(--error)";
+        return;
+      }
+
+      // Cache-buster để browser tải ảnh mới ngay (không dùng bản cache cũ)
+      avatarImg.src = resp.avatarUrl + "?t=" + Date.now();
+      user.avatarUrl = resp.avatarUrl;
+      avatarHint.textContent = "✓ Đã cập nhật ảnh đại diện";
+      avatarHint.style.color = "var(--primary)";
+    });
 
     // Feedback helper
     const feedbackEl = document.getElementById("formFeedback");

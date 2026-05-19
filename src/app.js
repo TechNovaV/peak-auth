@@ -7,6 +7,7 @@ const swaggerUi = require("swagger-ui-express");
 
 const authRoutes = require("./routes/auth.routes");
 const adminRoutes = require("./routes/admin.routes");
+const postRoutes = require("./routes/post.routes");
 const errorHandler = require("./middlewares/errorHandler");
 const swaggerSpec = require("./config/swagger");
 const { CLIENT_URL } = require("./config/env");
@@ -70,6 +71,15 @@ app.get("/api-docs.json", (_req, res) => res.json(swaggerSpec));
 // API routes
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/posts", postRoutes);
+
+// User-uploaded files (avatars) — serve trước public/ để URL /uploads/* không bị match
+app.use(
+  "/uploads",
+  express.static(path.join(__dirname, "..", "uploads"), {
+    maxAge: "7d", // browser cache 7 ngày
+  })
+);
 
 // Frontend static — sau API để API route được match trước
 // Truy cập http://localhost:3000/ sẽ tự load public/index.html

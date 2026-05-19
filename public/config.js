@@ -134,7 +134,57 @@ const auth = {
     return apiCall("PATCH", "/auth/profile", updates);
   },
 
+  async forgotPassword({ email }) {
+    return apiCall(
+      "POST",
+      "/auth/forgot-password",
+      { email },
+      { skipAuth: true }
+    );
+  },
+
+  async resetPassword({ token, password }) {
+    return apiCall(
+      "POST",
+      "/auth/reset-password",
+      { token, password },
+      { skipAuth: true }
+    );
+  },
+
+  async uploadAvatar(file) {
+    const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+    const fd = new FormData();
+    fd.append("avatar", file);
+    const res = await fetch(`${API_URL}/auth/avatar`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      credentials: "include",
+      body: fd, // KHÔNG set Content-Type — browser tự thêm boundary cho multipart
+    });
+    const data = await res.json().catch(() => ({}));
+    return { ok: res.ok, status: res.status, data };
+  },
+
   isLoggedIn() {
     return !!localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+  },
+};
+
+// ============================================================
+//  POSTS API
+// ============================================================
+const posts = {
+  list() {
+    return apiCall("GET", "/posts");
+  },
+  create(content) {
+    return apiCall("POST", "/posts", { content });
+  },
+  remove(id) {
+    return apiCall("DELETE", `/posts/${id}`);
+  },
+  toggleLike(id) {
+    return apiCall("POST", `/posts/${id}/like`);
   },
 };

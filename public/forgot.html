@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Quên mật khẩu - Social App</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="auth-container">
+      <section class="auth-card">
+        <header class="auth-header">
+          <h1 class="logo">SocialApp</h1>
+          <p class="subtitle">Đặt lại mật khẩu</p>
+        </header>
+
+        <form class="auth-form" id="forgotForm" novalidate>
+          <p class="auth-footer" style="margin-bottom: 16px; text-align: left">
+            Nhập email đăng ký. Chúng tôi sẽ gửi link đặt lại mật khẩu.
+          </p>
+
+          <div class="field">
+            <label for="email">Email</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              placeholder="ban@example.com"
+              required
+              autocomplete="email"
+            />
+            <small class="error" id="emailError"></small>
+          </div>
+
+          <button type="submit" class="btn-primary">Gửi link</button>
+
+          <div
+            id="successMsg"
+            class="hidden"
+            style="
+              margin-top: 16px;
+              padding: 12px;
+              background: #ecfdf5;
+              border-radius: 8px;
+              color: #047857;
+              font-size: 14px;
+              line-height: 1.5;
+            "
+          ></div>
+
+          <p class="auth-footer">
+            Nhớ mật khẩu rồi?
+            <a href="index.html" class="link">Quay lại đăng nhập</a>
+          </p>
+        </form>
+      </section>
+    </main>
+
+    <script src="config.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>

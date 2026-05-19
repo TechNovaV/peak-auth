@@ -19,6 +19,7 @@ const userSchema = new mongoose.Schema(
     bio: { type: String, default: "", maxlength: 500 },
     school: { type: String, default: "", maxlength: 100, trim: true },
     class: { type: String, default: "", maxlength: 50, trim: true },
+    avatarUrl: { type: String, default: "" },
     email: {
       type: String,
       lowercase: true,

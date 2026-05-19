@@ -89,79 +89,54 @@
 
     <!-- FEED (CENTER) -->
     <main class="feed">
-      <!-- Post composer -->
+      <!-- Post composer (real, Phase 5) -->
       <section class="composer card">
-        <div class="composer-top">
-          <img id="composerAvatar" class="composer-avatar" alt="" />
-          <button class="composer-input" id="composerInput">
-            <span id="composerPrompt">Bạn đang nghĩ gì thế?</span>
-          </button>
-        </div>
-        <hr />
-        <div class="composer-actions">
-          <button class="composer-action">🎥 Video trực tiếp</button>
-          <button class="composer-action">🖼 Ảnh/Video</button>
-          <button class="composer-action">☺ Cảm xúc</button>
-        </div>
+        <form id="composerForm">
+          <div class="composer-top">
+            <img id="composerAvatar" class="composer-avatar" alt="" />
+            <textarea
+              id="composerInput"
+              placeholder="Bạn đang nghĩ gì thế?"
+              maxlength="1000"
+              rows="2"
+              style="
+                flex: 1;
+                border: 1px solid #e5e7eb;
+                border-radius: 12px;
+                padding: 12px 16px;
+                font-size: 15px;
+                font-family: inherit;
+                resize: vertical;
+              "
+            ></textarea>
+          </div>
+          <hr />
+          <div
+            class="composer-actions"
+            style="display: flex; justify-content: space-between; align-items: center;"
+          >
+            <span id="composerCharCount" style="font-size: 13px; color: #6b7280">0 / 1000</span>
+            <button
+              type="submit"
+              class="btn-primary"
+              id="composerSubmit"
+              style="width: auto; padding: 8px 24px"
+            >
+              Đăng
+            </button>
+          </div>
+        </form>
       </section>
 
-      <!-- Sample posts (mock data — sẽ thay bằng DB ở Sprint sau) -->
-      <article class="post card">
-        <header class="post-header">
-          <img class="post-avatar" src="https://ui-avatars.com/api/?name=L+H&background=ec4899&color=fff&size=80" alt="" />
-          <div>
-            <div class="post-author">Lê Hương</div>
-            <div class="post-meta">2 giờ trước · Lớp 9A2</div>
-          </div>
-          <button class="post-more">⋯</button>
-        </header>
-        <div class="post-body">
-          Mai có kiểm tra Toán mà chưa ôn gì luôn 😭 ai có đề mẫu cho mình xin với!
-        </div>
-        <footer class="post-footer">
-          <button class="post-action">♡ Thích</button>
-          <button class="post-action">💬 Bình luận</button>
-          <button class="post-action">↪ Chia sẻ</button>
-        </footer>
-      </article>
-
-      <article class="post card">
-        <header class="post-header">
-          <img class="post-avatar" src="https://ui-avatars.com/api/?name=M+T&background=10b981&color=fff&size=80" alt="" />
-          <div>
-            <div class="post-author">Minh Tuấn</div>
-            <div class="post-meta">5 giờ trước · Lớp 9A2</div>
-          </div>
-          <button class="post-more">⋯</button>
-        </header>
-        <div class="post-body">
-          Lớp mình tổ chức đi chơi cuối tuần này nhé, ai đi inbox tớ 🎉
-        </div>
-        <footer class="post-footer">
-          <button class="post-action">♡ Thích</button>
-          <button class="post-action">💬 Bình luận</button>
-          <button class="post-action">↪ Chia sẻ</button>
-        </footer>
-      </article>
-
-      <article class="post card">
-        <header class="post-header">
-          <img class="post-avatar" src="https://ui-avatars.com/api/?name=A+N&background=f59e0b&color=fff&size=80" alt="" />
-          <div>
-            <div class="post-author">An Nhiên</div>
-            <div class="post-meta">Hôm qua · Lớp 9A1</div>
-          </div>
-          <button class="post-more">⋯</button>
-        </header>
-        <div class="post-body">
-          Welcome SocialApp! App của trường mình đó, ai cùng lớp kết bạn nhau nha 💜
-        </div>
-        <footer class="post-footer">
-          <button class="post-action">♡ Thích</button>
-          <button class="post-action">💬 Bình luận</button>
-          <button class="post-action">↪ Chia sẻ</button>
-        </footer>
-      </article>
+      <!-- Feed container: real posts will be rendered here -->
+      <div id="postsContainer">
+        <p
+          id="postsLoading"
+          style="text-align: center; color: #6b7280; padding: 24px"
+        >
+          Đang tải bài viết...
+        </p>
+      </div>
     </main>
 
     <!-- RIGHT SIDEBAR -->

@@ -34,6 +34,7 @@ const options = {
       { name: "Email", description: "Verify email, resend verification" },
       { name: "User", description: "Thông tin user hiện tại" },
       { name: "Admin", description: "Quản trị (yêu cầu role=admin)" },
+      { name: "Posts", description: "Đăng bài, feed, like" },
       { name: "System", description: "Health check" },
     ],
     components: {
@@ -223,7 +224,7 @@ const options = {
     },
   },
   // Quét JSDoc trong các file route + app.js (chứa /health)
-  apis: ["./src/routes/*.js", "./src/app.js"],
+  apis: ["./src/routes/*.js", "./src/app.js", "./src/routes/post.routes.js"],
 };
 
 const swaggerSpec = swaggerJsdoc(options);
