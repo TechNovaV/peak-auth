@@ -382,34 +382,33 @@ if (homeRoot) {
     function renderPost(post) {
       const author = post.author || {};
       const authorName = author.full_name || author.username || t("post.unknown_user");
-      const authorAvatar =
-        author.avatar_url || getDefaultAvatarUrl(authorName);
+      const authorAvatar = author.avatar_url || getDefaultAvatarUrl(authorName);
       const canDelete = post.author_id === currentUserId;
       const likedByMe = post.likedByMe;
-      const likeIcon = likedByMe ? "❤️" : "♡";
-      const likeClass = likedByMe ? "post-action liked" : "post-action";
+      const likeClass = likedByMe ? "post-btn like-btn liked" : "post-btn like-btn";
+      const likeIcon = likedByMe ? "❤️" : "🤍";
+      const likeCountClass = post.likeCount > 0 ? "post-like-count has-likes" : "post-like-count";
 
       return `
-        <article class="post card" data-id="${post.id}">
+        <article class="post-card" data-id="${post.id}">
           <header class="post-header">
-            <img class="post-avatar" src="${authorAvatar}" alt="" />
-            <div>
-              <div class="post-author">${escapeHtml(authorName)}</div>
-              <div class="post-meta">${timeAgo(post.created_at)}</div>
+            <img class="post-avatar" src="${escapeHtml(authorAvatar)}" alt="" />
+            <div class="post-author-info">
+              <div class="post-author-name">${escapeHtml(authorName)}</div>
+              <div class="post-time">${timeAgo(post.created_at)}</div>
             </div>
-            ${
-              canDelete
-                ? `<button class="post-more delete-btn" title="${t("post.delete_title")}">⋯</button>`
-                : ""
-            }
+            ${canDelete ? `<button class="post-more delete-btn" title="${t("post.delete_title")}">⋯</button>` : ""}
           </header>
           <div class="post-body">${escapeHtml(post.content)}</div>
           <footer class="post-footer">
-            <button class="${likeClass} like-btn">
-              ${likeIcon} ${t("post.like")} <span class="like-count">${post.likeCount}</span>
-            </button>
-            <button class="post-action">💬 ${t("post.comment")}</button>
-            <button class="post-action">↪ ${t("post.share")}</button>
+            <div class="post-actions">
+              <button class="${likeClass}">${likeIcon} ${t("post.like")}</button>
+              <button class="post-btn">💬 ${t("post.comment")}</button>
+              <button class="post-btn">↗ ${t("post.share")}</button>
+            </div>
+            <div class="${likeCountClass}" data-count="${post.likeCount}">
+              ${post.likeCount > 0 ? "❤️ " + post.likeCount : ""}
+            </div>
           </footer>
         </article>
       `;
@@ -488,34 +487,36 @@ if (homeRoot) {
 
     // Event delegation cho like / delete
     postsContainer?.addEventListener("click", async (e) => {
-      const article = e.target.closest("article.post");
+      const article = e.target.closest("article.post-card");
       if (!article) return;
       const postId = article.dataset.id;
 
       if (e.target.closest(".like-btn")) {
         const btn = e.target.closest(".like-btn");
-        const countEl = btn.querySelector(".like-count");
+        const countEl = article.querySelector(".post-like-count");
         const isLiked = btn.classList.contains("liked");
+        const currentCount = parseInt(countEl.dataset.count || "0");
 
         if (isLiked) {
-          // Bỏ like
           const { error } = await supabaseClient
-            .from("likes")
-            .delete()
-            .match({ post_id: postId, user_id: currentUserId });
+            .from("likes").delete().match({ post_id: postId, user_id: currentUserId });
           if (error) return console.error(error);
           btn.classList.remove("liked");
-          btn.innerHTML = btn.innerHTML.replace("❤️", "♡");
-          countEl.textContent = Math.max(0, parseInt(countEl.textContent) - 1);
+          btn.innerHTML = `🤍 ${t("post.like")}`;
+          const newCount = Math.max(0, currentCount - 1);
+          countEl.dataset.count = newCount;
+          countEl.classList.toggle("has-likes", newCount > 0);
+          countEl.textContent = newCount > 0 ? "❤️ " + newCount : "";
         } else {
-          // Like
           const { error } = await supabaseClient
-            .from("likes")
-            .insert({ post_id: postId, user_id: currentUserId });
+            .from("likes").insert({ post_id: postId, user_id: currentUserId });
           if (error) return console.error(error);
           btn.classList.add("liked");
-          btn.innerHTML = btn.innerHTML.replace("♡", "❤️");
-          countEl.textContent = parseInt(countEl.textContent) + 1;
+          btn.innerHTML = `❤️ ${t("post.like")}`;
+          const newCount = currentCount + 1;
+          countEl.dataset.count = newCount;
+          countEl.classList.add("has-likes");
+          countEl.textContent = "❤️ " + newCount;
         }
         return;
       }
@@ -523,15 +524,42 @@ if (homeRoot) {
       if (e.target.closest(".delete-btn")) {
         if (!confirm(t("msg.confirm_delete"))) return;
         const { error } = await supabaseClient
-          .from("posts")
-          .delete()
-          .eq("id", postId);
+          .from("posts").delete().eq("id", postId);
         if (error) return alert(t("err.delete_error") + ": " + error.message);
         article.remove();
       }
     });
 
     loadFeed();
+
+    // Load friends sidebar
+    const friendsList = document.getElementById("friendsList");
+    if (friendsList) {
+      const { data: friends } = await supabaseClient
+        .from("profiles")
+        .select("id, full_name, username, avatar_url")
+        .neq("id", currentUserId)
+        .limit(10);
+
+      if (!friends || friends.length === 0) {
+        friendsList.innerHTML = `<p class="friends-empty">Chưa có bạn bè nào.<br/>Tính năng kết bạn sắp ra mắt!</p>`;
+      } else {
+        friendsList.innerHTML = friends.map((f) => {
+          const name = f.full_name || f.username || t("post.unknown_user");
+          const avatar = f.avatar_url || getDefaultAvatarUrl(name);
+          return `<a href="#" class="friend-item">
+            <img src="${escapeHtml(avatar)}" alt="" />
+            <span>${escapeHtml(name)}</span>
+          </a>`;
+        }).join("");
+      }
+    }
+
+    // Locket tab placeholder
+    document.getElementById("locketTab")?.addEventListener("click", (e) => {
+      e.preventDefault();
+      alert("Locket – Tính năng sắp ra mắt! 📸");
+    });
   })();
 }
 

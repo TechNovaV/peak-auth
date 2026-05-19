@@ -7,10 +7,13 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body class="app-body hidden" id="homeRoot">
+
   <!-- ============ TOP NAV ============ -->
   <header class="top-nav">
     <div class="nav-left">
-      <a href="home.html" class="brand"><img src="images/peak-logo.png" alt="PEAK!" class="brand-logo" /></a>
+      <a href="home.html" class="brand">
+        <img src="images/peak-logo.png" alt="PEAK!" class="brand-logo" />
+      </a>
       <div class="search-box">
         <span class="search-icon">⌕</span>
         <input type="text" placeholder="Tìm kiếm trên PEAK!" data-i18n-placeholder="home.search_placeholder" />
@@ -18,18 +21,21 @@
     </div>
 
     <nav class="nav-center">
-      <a href="#" class="nav-tab active" title="Trang chủ" data-i18n-title="home.nav.home">⌂</a>
-      <a href="#" class="nav-tab" title="Bạn bè" data-i18n-title="home.nav.friends">☺</a>
-      <a href="#" class="nav-tab" title="Video" data-i18n-title="home.nav.videos">▶</a>
-      <a href="#" class="nav-tab" title="Nhóm" data-i18n-title="home.nav.groups">⚇</a>
+      <a href="home.html" class="nav-tab active" title="Trang chủ" data-i18n-title="home.nav.home">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+        <span class="nav-tab-label" data-i18n="home.nav.home">Trang chủ</span>
+      </a>
+      <a href="#" class="nav-tab" id="locketTab" title="Locket">
+        <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+        <span class="nav-tab-label">Locket</span>
+      </a>
     </nav>
 
     <div class="nav-right">
       <button class="icon-btn" title="Tin nhắn" data-i18n-title="home.nav.messages">✉</button>
-      <button class="icon-btn" title="Thông báo" data-i18n-title="home.nav.notifications">♪</button>
-
+      <button class="icon-btn" title="Thông báo" data-i18n-title="home.nav.notifications">🔔</button>
       <div class="avatar-menu">
-        <button class="avatar-btn" id="avatarBtn" title="Tài khoản">
+        <button class="avatar-btn" id="avatarBtn" title="Tài khoản" data-i18n-title="home.nav.account">
           <img id="navAvatar" alt="avatar" />
         </button>
         <div class="dropdown hidden" id="avatarDropdown">
@@ -42,17 +48,21 @@
           </div>
           <hr />
           <a href="profile.html" class="dropdown-item">
-            <span class="dd-icon">👤</span> <span data-i18n="home.dropdown.profile">Trang cá nhân</span>
+            <span class="dd-icon">👤</span>
+            <span data-i18n="home.dropdown.profile">Trang cá nhân</span>
           </a>
           <a href="#" class="dropdown-item">
-            <span class="dd-icon">⚙</span> <span data-i18n="home.dropdown.settings">Cài đặt</span>
+            <span class="dd-icon">⚙</span>
+            <span data-i18n="home.dropdown.settings">Cài đặt</span>
           </a>
           <a href="#" class="dropdown-item">
-            <span class="dd-icon">?</span> <span data-i18n="home.dropdown.help">Trợ giúp</span>
+            <span class="dd-icon">?</span>
+            <span data-i18n="home.dropdown.help">Trợ giúp</span>
           </a>
           <hr />
           <button class="dropdown-item logout" id="logoutBtn">
-            <span class="dd-icon">⏻</span> <span data-i18n="common.logout">Đăng xuất</span>
+            <span class="dd-icon">⏻</span>
+            <span data-i18n="common.logout">Đăng xuất</span>
           </button>
         </div>
       </div>
@@ -61,36 +71,28 @@
 
   <!-- ============ MAIN LAYOUT ============ -->
   <div class="layout">
+
     <!-- LEFT SIDEBAR -->
     <aside class="sidebar sidebar-left">
-      <a href="profile.html" class="side-item">
+      <a href="profile.html" class="side-item side-profile">
         <img id="sideAvatar" class="side-avatar" alt="" />
-        <span id="sideName">Bạn</span>
+        <span id="sideName" class="side-name">Bạn</span>
+      </a>
+      <div class="side-divider"></div>
+      <a href="#" class="side-item">
+        <span class="side-icon">👥</span>
+        <span data-i18n="home.sidebar.friends">Bạn bè</span>
       </a>
       <a href="#" class="side-item">
-        <span class="side-icon">👥</span> <span data-i18n="home.sidebar.friends">Bạn bè</span>
-      </a>
-      <a href="#" class="side-item">
-        <span class="side-icon">⚇</span> <span data-i18n="home.sidebar.groups">Nhóm</span>
-      </a>
-      <a href="#" class="side-item">
-        <span class="side-icon">▶</span> <span data-i18n="home.sidebar.videos">Video</span>
-      </a>
-      <a href="#" class="side-item">
-        <span class="side-icon">🛒</span> <span data-i18n="home.sidebar.marketplace">Marketplace</span>
-      </a>
-      <a href="#" class="side-item">
-        <span class="side-icon">🕒</span> <span data-i18n="home.sidebar.memories">Kỷ niệm</span>
-      </a>
-      <a href="#" class="side-item">
-        <span class="side-icon">🔖</span> <span data-i18n="home.sidebar.saved">Đã lưu</span>
+        <span class="side-icon">🔖</span>
+        <span data-i18n="home.sidebar.saved">Đã lưu</span>
       </a>
     </aside>
 
-    <!-- FEED (CENTER) -->
+    <!-- FEED -->
     <main class="feed">
-      <!-- Post composer (real, Phase 5) -->
-      <section class="composer card">
+      <!-- Composer -->
+      <section class="composer-card">
         <form id="composerForm">
           <div class="composer-top">
             <img id="composerAvatar" class="composer-avatar" alt="" />
@@ -100,73 +102,27 @@
               data-i18n-placeholder="home.composer.placeholder"
               maxlength="1000"
               rows="2"
-              style="
-                flex: 1;
-                border: 1px solid #e5e7eb;
-                border-radius: 12px;
-                padding: 12px 16px;
-                font-size: 15px;
-                font-family: inherit;
-                resize: vertical;
-              "
             ></textarea>
           </div>
-          <hr />
-          <div
-            class="composer-actions"
-            style="display: flex; justify-content: space-between; align-items: center;"
-          >
-            <span id="composerCharCount" style="font-size: 13px; color: #6b7280">0 / 1000</span>
-            <button
-              type="submit"
-              class="btn-primary"
-              id="composerSubmit"
-              style="width: auto; padding: 8px 24px"
-              data-i18n="home.composer.post"
-            >
-              Đăng
-            </button>
+          <div class="composer-footer">
+            <span id="composerCharCount" class="char-count">0 / 1000</span>
+            <button type="submit" class="btn-post" id="composerSubmit" data-i18n="home.composer.post">Đăng</button>
           </div>
         </form>
       </section>
 
-      <!-- Feed container: real posts will be rendered here -->
+      <!-- Posts -->
       <div id="postsContainer">
-        <p
-          id="postsLoading"
-          style="text-align: center; color: #6b7280; padding: 24px"
-        >
-          <span data-i18n="home.posts.loading">Đang tải bài viết...</span>
-        </p>
+        <p id="postsLoading" class="feed-status" data-i18n="home.posts.loading">Đang tải bài viết...</p>
       </div>
     </main>
 
     <!-- RIGHT SIDEBAR -->
     <aside class="sidebar sidebar-right">
       <h3 class="side-title" data-i18n="home.contacts">Người liên hệ</h3>
-      <a href="#" class="contact-item">
-        <img src="https://ui-avatars.com/api/?name=L+H&background=ec4899&color=fff&size=64" alt="" />
-        <span>Lê Hương</span>
-        <span class="online-dot"></span>
-      </a>
-      <a href="#" class="contact-item">
-        <img src="https://ui-avatars.com/api/?name=M+T&background=10b981&color=fff&size=64" alt="" />
-        <span>Minh Tuấn</span>
-        <span class="online-dot"></span>
-      </a>
-      <a href="#" class="contact-item">
-        <img src="https://ui-avatars.com/api/?name=A+N&background=f59e0b&color=fff&size=64" alt="" />
-        <span>An Nhiên</span>
-      </a>
-      <a href="#" class="contact-item">
-        <img src="https://ui-avatars.com/api/?name=H+P&background=6366f1&color=fff&size=64" alt="" />
-        <span>Hoàng Phúc</span>
-      </a>
-      <a href="#" class="contact-item">
-        <img src="https://ui-avatars.com/api/?name=T+L&background=ef4444&color=fff&size=64" alt="" />
-        <span>Thanh Lan</span>
-      </a>
+      <div id="friendsList"></div>
     </aside>
+
   </div>
 
   <script src="translations.js"></script>
@@ -175,4 +131,3 @@
   <script src="script.js"></script>
 </body>
 </html>
-
