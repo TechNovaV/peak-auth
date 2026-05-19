@@ -67,7 +67,21 @@ async function apiCall(method, path, body, options = {}) {
       body: body ? JSON.stringify(body) : undefined,
     });
 
-  let res = await doFetch();
+  let res;
+  try {
+    res = await doFetch();
+  } catch (err) {
+    // Network error: backend không chạy, mất mạng, CORS block, etc.
+    console.error("[apiCall] Network error:", err);
+    return {
+      ok: false,
+      status: 0,
+      data: {
+        message:
+          "Không kết nối được server. Kiểm tra backend có đang chạy không (http://localhost:3000).",
+      },
+    };
+  }
 
   // Nếu 401/403 và không phải request auth, thử refresh token rồi retry 1 lần
   if (
@@ -79,9 +93,16 @@ async function apiCall(method, path, body, options = {}) {
     const newToken = await refreshAccessToken();
     if (newToken) {
       headers.Authorization = `Bearer ${newToken}`;
-      res = await doFetch();
+      try {
+        res = await doFetch();
+      } catch (err) {
+        return {
+          ok: false,
+          status: 0,
+          data: { message: "Không kết nối được server" },
+        };
+      }
     } else {
-      // Refresh fail → clear token, redirect login (trừ khi đang ở login)
       localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
     }
   }

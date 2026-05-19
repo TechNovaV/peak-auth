@@ -83,7 +83,9 @@ if (loginForm) {
           "password",
           "Bạn thử quá nhiều lần. Đợi vài phút rồi thử lại"
         );
-      else showError("password", data.message || "Có lỗi xảy ra, thử lại sau");
+      else if (status === 0) showError("password", data.message);
+      else
+        showError("password", data.message || `Có lỗi xảy ra (HTTP ${status})`);
       return;
     }
 
@@ -138,13 +140,27 @@ if (registerForm) {
     setLoading(submitBtn, false, "Đăng ký");
 
     if (!ok) {
+      // Frontend derive username từ email → cả username conflict lẫn email conflict
+      // đều là vấn đề về "email" theo perspective của user
       if (status === 409) {
-        const isEmail = (data.message || "").toLowerCase().includes("email");
-        showError(isEmail ? "email" : "fullname", data.message);
+        showError("email", data.message || "Email/tài khoản đã tồn tại");
       } else if (status === 400) {
-        showError("password", data.message);
+        // 400 có thể về password, email, hoặc fullName — hiển thị message rõ
+        const msg = (data.message || "").toLowerCase();
+        if (msg.includes("mật khẩu") || msg.includes("password")) {
+          showError("password", data.message);
+        } else if (msg.includes("email")) {
+          showError("email", data.message);
+        } else if (msg.includes("tên")) {
+          showError("fullname", data.message);
+        } else {
+          showError("email", data.message || "Dữ liệu không hợp lệ");
+        }
+      } else if (status === 0) {
+        // Network error
+        showError("email", data.message);
       } else {
-        showError("email", data.message || "Đăng ký thất bại");
+        showError("email", data.message || `Đăng ký thất bại (HTTP ${status})`);
       }
       return;
     }
