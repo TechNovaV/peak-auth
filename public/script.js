@@ -1,5 +1,5 @@
 // ============================================================
-//  HELPERS
+//  HELPERS (chung cho mọi page)
 // ============================================================
 function showError(inputId, message) {
   const input = document.getElementById(inputId);
@@ -35,9 +35,22 @@ function setLoading(button, isLoading, normalText) {
   }
 }
 
-function getDefaultAvatar(name) {
-  const safeName = encodeURIComponent(name || "User");
-  return `https://ui-avatars.com/api/?name=${safeName}&background=4f46e5&color=fff&size=128&bold=true`;
+function escapeHtml(text) {
+  const div = document.createElement("div");
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function timeAgo(dateStr) {
+  const seconds = Math.floor((Date.now() - new Date(dateStr)) / 1000);
+  if (seconds < 60) return "vừa xong";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return minutes + " phút trước";
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return hours + " giờ trước";
+  const days = Math.floor(hours / 24);
+  if (days < 7) return days + " ngày trước";
+  return new Date(dateStr).toLocaleDateString("vi-VN");
 }
 
 // ============================================================
@@ -65,27 +78,21 @@ if (loginForm) {
     if (!password) {
       showError("password", "Vui lòng nhập mật khẩu");
       valid = false;
-    } else if (password.length < 8) {
-      showError("password", "Mật khẩu phải có ít nhất 8 ký tự");
+    } else if (password.length < 6) {
+      showError("password", "Mật khẩu phải có ít nhất 6 ký tự");
       valid = false;
     }
     if (!valid) return;
 
     setLoading(submitBtn, true);
-    const { ok, status, data } = await auth.login({ email, password });
+    const { error } = await supabaseClient.auth.signInWithPassword({
+      email,
+      password,
+    });
     setLoading(submitBtn, false, "Đăng nhập");
 
-    if (!ok) {
-      if (status === 401)
-        showError("password", "Email hoặc mật khẩu không đúng");
-      else if (status === 429)
-        showError(
-          "password",
-          "Bạn thử quá nhiều lần. Đợi vài phút rồi thử lại"
-        );
-      else if (status === 0) showError("password", data.message);
-      else
-        showError("password", data.message || `Có lỗi xảy ra (HTTP ${status})`);
+    if (error) {
+      showError("password", translateAuthError(error.message));
       return;
     }
 
@@ -121,8 +128,8 @@ if (registerForm) {
       showError("email", "Email không hợp lệ");
       valid = false;
     }
-    if (!password || password.length < 8) {
-      showError("password", "Mật khẩu phải có ít nhất 8 ký tự");
+    if (!password || password.length < 6) {
+      showError("password", "Mật khẩu phải có ít nhất 6 ký tự");
       valid = false;
     }
     if (password !== confirmPassword) {
@@ -132,47 +139,32 @@ if (registerForm) {
     if (!valid) return;
 
     setLoading(submitBtn, true);
-    const { ok, status, data } = await auth.register({
+    const { data, error } = await supabaseClient.auth.signUp({
       email,
       password,
-      fullName: fullname,
+      options: {
+        // full_name lưu vào user_metadata. Trigger SQL sẽ copy sang profiles.full_name
+        data: { full_name: fullname },
+      },
     });
     setLoading(submitBtn, false, "Đăng ký");
 
-    if (!ok) {
-      // Frontend derive username từ email → cả username conflict lẫn email conflict
-      // đều là vấn đề về "email" theo perspective của user
-      if (status === 409) {
-        showError("email", data.message || "Email/tài khoản đã tồn tại");
-      } else if (status === 400) {
-        // 400 có thể về password, email, hoặc fullName — hiển thị message rõ
-        const msg = (data.message || "").toLowerCase();
-        if (msg.includes("mật khẩu") || msg.includes("password")) {
-          showError("password", data.message);
-        } else if (msg.includes("email")) {
-          showError("email", data.message);
-        } else if (msg.includes("tên")) {
-          showError("fullname", data.message);
-        } else {
-          showError("email", data.message || "Dữ liệu không hợp lệ");
-        }
-      } else if (status === 0) {
-        // Network error
-        showError("email", data.message);
-      } else {
-        showError("email", data.message || `Đăng ký thất bại (HTTP ${status})`);
-      }
+    if (error) {
+      showError("email", translateAuthError(error.message));
       return;
     }
 
-    // Đăng ký thành công → auto login để vào home
-    const loginRes = await auth.login({ email, password });
-    if (loginRes.ok) {
-      window.location.href = "home.html";
-    } else {
-      alert("Đăng ký thành công! Vui lòng đăng nhập.");
+    // Nếu Email Confirm BẬT, user phải xác nhận email trước → chưa có session
+    if (data.user && !data.session) {
+      alert(
+        "Đăng ký thành công! Vui lòng kiểm tra email để xác nhận tài khoản."
+      );
       window.location.href = "index.html";
+      return;
     }
+
+    // Confirm email TẮT → vào thẳng home
+    window.location.href = "home.html";
   });
 }
 
@@ -200,26 +192,19 @@ if (forgotForm) {
     }
 
     setLoading(submitBtn, true);
-    const { ok, data } = await auth.forgotPassword({ email });
+    // Supabase tự gửi email với link reset (cần cấu hình SMTP trong Dashboard)
+    const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin + "/reset.html",
+    });
     setLoading(submitBtn, false, "Gửi link");
 
-    if (!ok) {
-      showError("email", data.message || "Có lỗi xảy ra");
+    if (error) {
+      showError("email", translateAuthError(error.message));
       return;
     }
 
-    // Anti-enumeration: backend luôn trả 200 dù email có/không tồn tại
-    let msg = "✓ " + data.message;
-    // Dev mode: backend trả luôn resetToken để dễ test
-    if (data.resetToken) {
-      msg +=
-        '<br><br><strong>Dev mode link:</strong><br><a href="reset.html?token=' +
-        data.resetToken +
-        '" class="link">reset.html?token=' +
-        data.resetToken.substring(0, 16) +
-        "...</a>";
-    }
-    successMsg.innerHTML = msg;
+    successMsg.innerHTML =
+      "✓ Đã gửi email đặt lại mật khẩu (nếu email tồn tại trong hệ thống). Kiểm tra hộp thư.";
     successMsg.classList.remove("hidden");
   });
 }
@@ -229,31 +214,21 @@ if (forgotForm) {
 // ============================================================
 const resetForm = document.getElementById("resetForm");
 if (resetForm) {
-  // Đọc token từ URL ?token=xxx
-  const urlParams = new URLSearchParams(window.location.search);
-  const token = urlParams.get("token");
-  const tokenErrorEl = document.getElementById("tokenError");
-
-  if (!token) {
-    tokenErrorEl.textContent =
-      "Link đặt lại mật khẩu không hợp lệ (thiếu token).";
-    tokenErrorEl.classList.remove("hidden");
-    resetForm.querySelector("button[type=submit]").disabled = true;
-  }
+  // Supabase đặt session từ URL fragment khi user click link trong email
+  // SDK tự xử lý — không cần đọc URL thủ công
 
   resetForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    if (!token) return;
-
     const password = document.getElementById("password").value;
     const confirmPassword = document.getElementById("confirmPassword").value;
     const submitBtn = resetForm.querySelector("button[type=submit]");
+    const tokenErrorEl = document.getElementById("tokenError");
 
     clearAllErrors(["password", "confirmPassword"]);
 
     let valid = true;
-    if (!password || password.length < 8) {
-      showError("password", "Mật khẩu phải có ít nhất 8 ký tự");
+    if (!password || password.length < 6) {
+      showError("password", "Mật khẩu phải có ít nhất 6 ký tự");
       valid = false;
     }
     if (password !== confirmPassword) {
@@ -263,72 +238,61 @@ if (resetForm) {
     if (!valid) return;
 
     setLoading(submitBtn, true);
-    const { ok, data } = await auth.resetPassword({ token, password });
+    const { error } = await supabaseClient.auth.updateUser({ password });
     setLoading(submitBtn, false, "Đặt lại mật khẩu");
 
-    if (!ok) {
-      tokenErrorEl.textContent = data.message || "Đặt lại thất bại";
+    if (error) {
+      tokenErrorEl.textContent = translateAuthError(error.message);
       tokenErrorEl.classList.remove("hidden");
       return;
     }
 
-    alert("✓ Đã đổi mật khẩu thành công! Vui lòng đăng nhập lại.");
+    alert("✓ Đổi mật khẩu thành công! Vui lòng đăng nhập lại.");
+    await supabaseClient.auth.signOut();
     window.location.href = "index.html";
   });
 }
 
 // ============================================================
-//  DASHBOARD GUARD (trang debug cũ — vẫn giữ)
+//  DASHBOARD (debug page cũ — vẫn giữ)
 // ============================================================
 const dashboardRoot = document.getElementById("dashboardRoot");
 if (dashboardRoot) {
   (async () => {
-    if (!auth.isLoggedIn()) {
-      window.location.href = "index.html";
-      return;
-    }
-    const { ok, data } = await auth.me();
-    if (!ok) {
-      window.location.href = "index.html";
-      return;
-    }
-    const user = data.user;
-    const fullName = user.fullName || user.username || "Bạn";
+    const session = await requireSession();
+    if (!session) return;
+    const user = session.user;
+    const fullName = user.user_metadata?.full_name || "Bạn";
     document.getElementById("welcomeName").textContent = fullName;
-    document.getElementById("welcomeEmail").textContent = user.email || "";
-    document.getElementById("welcomeId").textContent = user._id;
+    document.getElementById("welcomeEmail").textContent = user.email;
+    document.getElementById("welcomeId").textContent = user.id;
     dashboardRoot.classList.remove("hidden");
-
-    document.getElementById("logoutBtn").addEventListener("click", async () => {
-      await auth.logout();
-      window.location.href = "index.html";
-    });
+    document
+      .getElementById("logoutBtn")
+      .addEventListener("click", async () => {
+        await supabaseClient.auth.signOut();
+        window.location.href = "index.html";
+      });
   })();
 }
 
 // ============================================================
-//  HOME PAGE
+//  HOME PAGE — feed + composer
 // ============================================================
 const homeRoot = document.getElementById("homeRoot");
 if (homeRoot) {
   (async () => {
-    // 1) Bảo vệ trang
-    if (!auth.isLoggedIn()) {
-      window.location.href = "index.html";
-      return;
-    }
-    const { ok, data } = await auth.me();
-    if (!ok) {
-      window.location.href = "index.html";
-      return;
-    }
+    const session = await requireSession();
+    if (!session) return;
 
-    const user = data.user;
-    const fullName = user.fullName || user.username || "Bạn";
+    const user = session.user;
+    const profile = await fetchProfile(user.id);
+    const fullName =
+      profile?.full_name || user.user_metadata?.full_name || "Bạn";
     const email = user.email || "";
-    const avatarUrl = user.avatarUrl || getDefaultAvatar(fullName);
+    const avatarUrl = profile?.avatar_url || getDefaultAvatarUrl(fullName);
 
-    // 2) Đổ data vào nav/sidebar/composer
+    // Đổ data vào nav/sidebar/composer
     const setImg = (id) => {
       const el = document.getElementById(id);
       if (el) el.src = avatarUrl;
@@ -352,7 +316,7 @@ if (homeRoot) {
 
     homeRoot.classList.remove("hidden");
 
-    // 3) Dropdown
+    // Dropdown
     const avatarBtn = document.getElementById("avatarBtn");
     const dropdown = document.getElementById("avatarDropdown");
     avatarBtn?.addEventListener("click", (e) => {
@@ -365,53 +329,35 @@ if (homeRoot) {
       }
     });
 
-    // 4) Logout
-    document.getElementById("logoutBtn").addEventListener("click", async () => {
-      await auth.logout();
-      window.location.href = "index.html";
-    });
+    // Logout
+    document
+      .getElementById("logoutBtn")
+      .addEventListener("click", async () => {
+        await supabaseClient.auth.signOut();
+        window.location.href = "index.html";
+      });
 
-    // 5) POSTS FEATURE (Phase 5)
-    // --- Helpers cho render post ---
-    const currentUserId = user._id;
+    // ============== POSTS FEATURE ==============
     const postsContainer = document.getElementById("postsContainer");
-
-    // "5 phút trước", "2 giờ trước", "hôm qua"
-    function timeAgo(dateStr) {
-      const seconds = Math.floor((Date.now() - new Date(dateStr)) / 1000);
-      if (seconds < 60) return "vừa xong";
-      const minutes = Math.floor(seconds / 60);
-      if (minutes < 60) return minutes + " phút trước";
-      const hours = Math.floor(minutes / 60);
-      if (hours < 24) return hours + " giờ trước";
-      const days = Math.floor(hours / 24);
-      if (days < 7) return days + " ngày trước";
-      return new Date(dateStr).toLocaleDateString("vi-VN");
-    }
-
-    // Escape HTML để chống XSS khi insert content vào DOM
-    function escapeHtml(text) {
-      const div = document.createElement("div");
-      div.textContent = text;
-      return div.innerHTML;
-    }
+    const currentUserId = user.id;
 
     function renderPost(post) {
-      const authorName = post.author.fullName || post.author.username;
+      const author = post.author || {};
+      const authorName = author.full_name || author.username || "Người dùng";
       const authorAvatar =
-        post.author.avatarUrl || getDefaultAvatar(authorName);
-      const canDelete =
-        post.author._id === currentUserId || user.role === "admin";
-      const likeIcon = post.likedByMe ? "❤️" : "♡";
-      const likeClass = post.likedByMe ? "post-action liked" : "post-action";
+        author.avatar_url || getDefaultAvatarUrl(authorName);
+      const canDelete = post.author_id === currentUserId;
+      const likedByMe = post.likedByMe;
+      const likeIcon = likedByMe ? "❤️" : "♡";
+      const likeClass = likedByMe ? "post-action liked" : "post-action";
 
       return `
-        <article class="post card" data-id="${post._id}">
+        <article class="post card" data-id="${post.id}">
           <header class="post-header">
             <img class="post-avatar" src="${authorAvatar}" alt="" />
             <div>
               <div class="post-author">${escapeHtml(authorName)}</div>
-              <div class="post-meta">${timeAgo(post.createdAt)}</div>
+              <div class="post-meta">${timeAgo(post.created_at)}</div>
             </div>
             ${
               canDelete
@@ -432,31 +378,52 @@ if (homeRoot) {
     }
 
     async function loadFeed() {
-      const { ok, data } = await posts.list();
-      if (!ok) {
-        postsContainer.innerHTML =
-          '<p style="text-align:center;color:#dc2626;padding:24px">Lỗi tải bài viết</p>';
+      // Lấy posts kèm author (profiles) và likes
+      const { data, error } = await supabaseClient
+        .from("posts")
+        .select(
+          `
+            id, content, created_at, author_id,
+            author:profiles!posts_author_id_fkey(username, full_name, avatar_url),
+            likes(user_id)
+          `
+        )
+        .order("created_at", { ascending: false })
+        .limit(50);
+
+      if (error) {
+        console.error("[loadFeed]", error);
+        postsContainer.innerHTML = `<p style="text-align:center;color:#dc2626;padding:24px">Lỗi tải bài viết: ${error.message}</p>`;
         return;
       }
-      if (data.posts.length === 0) {
+
+      if (!data || data.length === 0) {
         postsContainer.innerHTML =
           '<p style="text-align:center;color:#6b7280;padding:24px">Chưa có bài viết nào. Hãy là người đầu tiên!</p>';
         return;
       }
-      postsContainer.innerHTML = data.posts.map(renderPost).join("");
+
+      // Tính likeCount + likedByMe cho mỗi post
+      const enriched = data.map((p) => ({
+        ...p,
+        likeCount: (p.likes || []).length,
+        likedByMe: (p.likes || []).some((l) => l.user_id === currentUserId),
+      }));
+
+      postsContainer.innerHTML = enriched.map(renderPost).join("");
     }
 
-    // Composer: đăng bài
+    // Composer submit
     const composerForm = document.getElementById("composerForm");
     const composerInput = document.getElementById("composerInput");
     const composerCharCount = document.getElementById("composerCharCount");
     const composerSubmit = document.getElementById("composerSubmit");
 
-    composerInput.addEventListener("input", () => {
+    composerInput?.addEventListener("input", () => {
       composerCharCount.textContent = composerInput.value.length + " / 1000";
     });
 
-    composerForm.addEventListener("submit", async (e) => {
+    composerForm?.addEventListener("submit", async (e) => {
       e.preventDefault();
       const content = composerInput.value.trim();
       if (!content) return;
@@ -466,144 +433,114 @@ if (homeRoot) {
       }
 
       setLoading(composerSubmit, true);
-      const { ok, data: resp } = await posts.create(content);
+      const { error } = await supabaseClient
+        .from("posts")
+        .insert({ author_id: currentUserId, content });
       setLoading(composerSubmit, false, "Đăng");
 
-      if (!ok) {
-        alert("Lỗi: " + (resp.message || "Đăng bài thất bại"));
+      if (error) {
+        alert("Lỗi đăng bài: " + error.message);
         return;
       }
 
-      // Render post mới lên đầu feed
       composerInput.value = "";
       composerCharCount.textContent = "0 / 1000";
-      const existingHtml = postsContainer.querySelector("article")
-        ? postsContainer.innerHTML
-        : "";
-      postsContainer.innerHTML = renderPost(resp.post) + existingHtml;
+      loadFeed(); // reload toàn bộ feed (đơn giản nhất, fast với 50 post)
     });
 
-    // Event delegation: 1 listener cho cả container, xử lý like/delete
-    postsContainer.addEventListener("click", async (e) => {
+    // Event delegation cho like / delete
+    postsContainer?.addEventListener("click", async (e) => {
       const article = e.target.closest("article.post");
       if (!article) return;
       const postId = article.dataset.id;
 
-      // Like button
       if (e.target.closest(".like-btn")) {
         const btn = e.target.closest(".like-btn");
-        const { ok, data: resp } = await posts.toggleLike(postId);
-        if (!ok) return;
-        btn.querySelector(".like-count").textContent = resp.likeCount;
-        if (resp.liked) {
-          btn.classList.add("liked");
-          btn.innerHTML = btn.innerHTML.replace("♡", "❤️");
-        } else {
+        const countEl = btn.querySelector(".like-count");
+        const isLiked = btn.classList.contains("liked");
+
+        if (isLiked) {
+          // Bỏ like
+          const { error } = await supabaseClient
+            .from("likes")
+            .delete()
+            .match({ post_id: postId, user_id: currentUserId });
+          if (error) return console.error(error);
           btn.classList.remove("liked");
           btn.innerHTML = btn.innerHTML.replace("❤️", "♡");
+          countEl.textContent = Math.max(0, parseInt(countEl.textContent) - 1);
+        } else {
+          // Like
+          const { error } = await supabaseClient
+            .from("likes")
+            .insert({ post_id: postId, user_id: currentUserId });
+          if (error) return console.error(error);
+          btn.classList.add("liked");
+          btn.innerHTML = btn.innerHTML.replace("♡", "❤️");
+          countEl.textContent = parseInt(countEl.textContent) + 1;
         }
         return;
       }
 
-      // Delete button
       if (e.target.closest(".delete-btn")) {
         if (!confirm("Xóa bài viết này?")) return;
-        const { ok } = await posts.remove(postId);
-        if (ok) article.remove();
-        return;
+        const { error } = await supabaseClient
+          .from("posts")
+          .delete()
+          .eq("id", postId);
+        if (error) return alert("Lỗi: " + error.message);
+        article.remove();
       }
     });
 
-    // Load feed lần đầu
     loadFeed();
   })();
 }
 
 // ============================================================
-//  PROFILE PAGE — xem & sửa các trường có sẵn ở backend
-//  (Backend hiện chỉ hỗ trợ: username, email, fullName)
-//  Các trường bio/school/class/avatar sẽ được hỗ trợ ở Phase 2-3
+//  PROFILE PAGE — xem & sửa profile + upload avatar
 // ============================================================
 const profileRoot = document.getElementById("profileRoot");
 if (profileRoot) {
   (async () => {
-    if (!auth.isLoggedIn()) {
-      window.location.href = "index.html";
-      return;
-    }
-    const { ok, data } = await auth.me();
-    if (!ok) {
-      window.location.href = "index.html";
-      return;
-    }
+    const session = await requireSession();
+    if (!session) return;
 
-    const user = data.user;
-    const fullName = user.fullName || "";
+    const user = session.user;
+    let profile = await fetchProfile(user.id);
+
+    // Trường hợp hiếm: trigger chưa chạy → tự tạo profile rỗng
+    if (!profile) {
+      const { data: created } = await supabaseClient
+        .from("profiles")
+        .insert({
+          id: user.id,
+          full_name: user.user_metadata?.full_name || "",
+        })
+        .select()
+        .single();
+      profile = created || {};
+    }
 
     // Đổ data vào form
+    const fullName = profile.full_name || "";
     document.getElementById("fullName").value = fullName;
-    document.getElementById("username").value = user.username || "";
+    document.getElementById("username").value = profile.username || "";
+    document.getElementById("bio").value = profile.bio || "";
+    document.getElementById("school").value = profile.school || "";
+    document.getElementById("class").value = profile.class || "";
+    document.getElementById("bioCount").textContent = (
+      profile.bio || ""
+    ).length;
+    document.getElementById("profileAvatar").src =
+      profile.avatar_url || getDefaultAvatarUrl(fullName);
 
-    // Phase 2: bio / school / class đã có backend support
-    const bioInput = document.getElementById("bio");
-    const schoolInput = document.getElementById("school");
-    const classInput = document.getElementById("class");
-    if (bioInput) {
-      bioInput.value = user.bio || "";
-      document.getElementById("bioCount").textContent = (user.bio || "").length;
-      // Đếm ký tự realtime
-      bioInput.addEventListener("input", () => {
-        document.getElementById("bioCount").textContent = bioInput.value.length;
-      });
-    }
-    if (schoolInput) schoolInput.value = user.school || "";
-    if (classInput) classInput.value = user.class || "";
-
-    // Avatar: dùng URL thật nếu có, fallback ui-avatars
-    const avatarImg = document.getElementById("profileAvatar");
-    avatarImg.src = user.avatarUrl || getDefaultAvatar(fullName);
     profileRoot.classList.remove("hidden");
 
-    // Phase 3: Avatar upload real
-    const avatarInput = document.getElementById("avatarInput");
-    const avatarHint = document.getElementById("avatarHint");
-    if (avatarHint)
-      avatarHint.textContent =
-        "Bấm icon máy ảnh để đổi ảnh đại diện (tối đa 2MB)";
-
-    avatarInput?.addEventListener("change", async (e) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-
-      if (file.size > 2 * 1024 * 1024) {
-        avatarHint.textContent = "❌ Ảnh quá lớn (tối đa 2MB)";
-        avatarHint.style.color = "var(--error)";
-        avatarInput.value = "";
-        return;
-      }
-      if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-        avatarHint.textContent = "❌ Chỉ JPG, PNG hoặc WebP";
-        avatarHint.style.color = "var(--error)";
-        avatarInput.value = "";
-        return;
-      }
-
-      avatarHint.textContent = "Đang tải lên...";
-      avatarHint.style.color = "var(--text-light)";
-
-      const { ok, data: resp } = await auth.uploadAvatar(file);
-
-      if (!ok) {
-        avatarHint.textContent = "❌ " + (resp.message || "Upload thất bại");
-        avatarHint.style.color = "var(--error)";
-        return;
-      }
-
-      // Cache-buster để browser tải ảnh mới ngay (không dùng bản cache cũ)
-      avatarImg.src = resp.avatarUrl + "?t=" + Date.now();
-      user.avatarUrl = resp.avatarUrl;
-      avatarHint.textContent = "✓ Đã cập nhật ảnh đại diện";
-      avatarHint.style.color = "var(--primary)";
+    // Đếm ký tự bio realtime
+    const bioInput = document.getElementById("bio");
+    bioInput.addEventListener("input", () => {
+      document.getElementById("bioCount").textContent = bioInput.value.length;
     });
 
     // Feedback helper
@@ -619,7 +556,67 @@ if (profileRoot) {
       }
     };
 
-    // Submit form — cập nhật mọi field
+    // Upload avatar
+    const avatarInput = document.getElementById("avatarInput");
+    const avatarImg = document.getElementById("profileAvatar");
+    const avatarHint = document.getElementById("avatarHint");
+
+    avatarInput.addEventListener("change", async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      if (file.size > 2 * 1024 * 1024) {
+        avatarHint.textContent = "❌ Ảnh quá lớn (tối đa 2MB)";
+        avatarHint.style.color = "var(--error)";
+        avatarInput.value = "";
+        return;
+      }
+      if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+        avatarHint.textContent = "❌ Chỉ chấp nhận JPG, PNG hoặc WebP";
+        avatarHint.style.color = "var(--error)";
+        avatarInput.value = "";
+        return;
+      }
+
+      avatarHint.textContent = "Đang tải ảnh lên...";
+      avatarHint.style.color = "var(--text-light)";
+
+      const ext = file.name.split(".").pop().toLowerCase();
+      const filePath = `${user.id}/avatar.${ext}`;
+
+      const { error: uploadError } = await supabaseClient.storage
+        .from("avatars")
+        .upload(filePath, file, { upsert: true, contentType: file.type });
+
+      if (uploadError) {
+        console.error(uploadError);
+        avatarHint.textContent = "❌ Tải lên thất bại: " + uploadError.message;
+        avatarHint.style.color = "var(--error)";
+        return;
+      }
+
+      const { data: urlData } = supabaseClient.storage
+        .from("avatars")
+        .getPublicUrl(filePath);
+      const publicUrl = `${urlData.publicUrl}?v=${Date.now()}`;
+
+      const { error: updateError } = await supabaseClient
+        .from("profiles")
+        .update({ avatar_url: publicUrl })
+        .eq("id", user.id);
+
+      if (updateError) {
+        avatarHint.textContent = "❌ Lưu URL thất bại: " + updateError.message;
+        avatarHint.style.color = "var(--error)";
+        return;
+      }
+
+      avatarImg.src = publicUrl;
+      avatarHint.textContent = "✓ Đã cập nhật ảnh đại diện";
+      avatarHint.style.color = "var(--primary)";
+    });
+
+    // Submit form text fields
     const profileForm = document.getElementById("profileForm");
     profileForm.addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -629,7 +626,7 @@ if (profileRoot) {
         .getElementById("username")
         .value.trim()
         .toLowerCase();
-      const newBio = document.getElementById("bio").value;
+      const newBio = document.getElementById("bio").value.trim();
       const newSchool = document.getElementById("school").value.trim();
       const newClass = document.getElementById("class").value.trim();
       const submitBtn = profileForm.querySelector("button[type=submit]");
@@ -642,48 +639,37 @@ if (profileRoot) {
         showError("fullName", "Họ tên phải có ít nhất 2 ký tự");
         valid = false;
       }
-      if (newUsername && newUsername.length < 3) {
-        showError("username", "Username phải có ít nhất 3 ký tự");
-        valid = false;
-      }
-      if (newBio.length > 500) {
-        showFeedback("Bio không quá 500 ký tự", "error");
+      if (newUsername && !/^[a-z0-9_]{3,30}$/.test(newUsername)) {
+        showError(
+          "username",
+          "Username 3-30 ký tự, chỉ chữ thường, số và dấu gạch dưới"
+        );
         valid = false;
       }
       if (!valid) return;
 
-      // Chỉ gửi field thật sự thay đổi (so với giá trị ban đầu)
-      const updates = {};
-      if (newFullName !== fullName) updates.fullName = newFullName;
-      if (newUsername && newUsername !== user.username)
-        updates.username = newUsername;
-      if (newBio !== (user.bio || "")) updates.bio = newBio;
-      if (newSchool !== (user.school || "")) updates.school = newSchool;
-      if (newClass !== (user.class || "")) updates.class = newClass;
-
-      if (Object.keys(updates).length === 0) {
-        showFeedback("Không có thay đổi nào", "success");
-        return;
-      }
-
       setLoading(submitBtn, true);
-      const { ok, status, data: resData } = await auth.updateProfile(updates);
+      const { error: updateError } = await supabaseClient
+        .from("profiles")
+        .update({
+          full_name: newFullName,
+          username: newUsername || null,
+          bio: newBio || null,
+          school: newSchool || null,
+          class: newClass || null,
+        })
+        .eq("id", user.id);
       setLoading(submitBtn, false, "Lưu thay đổi");
 
-      if (!ok) {
-        if (status === 409) {
+      if (updateError) {
+        if (updateError.code === "23505") {
           showError("username", "Username này đã có người dùng, chọn tên khác");
         } else {
-          showFeedback(
-            "Lỗi: " + (resData.message || "Cập nhật thất bại"),
-            "error"
-          );
+          showFeedback("Lỗi: " + updateError.message, "error");
         }
         return;
       }
 
-      // Cập nhật user object để compare lần sau
-      Object.assign(user, updates);
       showFeedback("✓ Đã lưu thay đổi", "success");
     });
   })();

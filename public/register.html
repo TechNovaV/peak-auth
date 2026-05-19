@@ -1,93 +1,96 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="vi">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Đăng ký - Social App</title>
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body>
-  <main class="auth-container">
-    <section class="auth-card">
-      <header class="auth-header">
-        <h1 class="logo">SocialApp</h1>
-        <p class="subtitle">Tạo tài khoản mới</p>
-      </header>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Đăng ký - Social App</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="auth-container">
+      <section class="auth-card">
+        <header class="auth-header">
+          <h1 class="logo">SocialApp</h1>
+          <p class="subtitle">Tạo tài khoản mới</p>
+        </header>
 
-      <form class="auth-form" id="registerForm" novalidate>
-        <div class="field">
-          <label for="fullname">Họ và tên</label>
-          <input
-            type="text"
-            id="fullname"
-            name="fullname"
-            placeholder="Nguyễn Văn A"
-            minlength="2"
-            required
-            autocomplete="name"
-          />
-          <small class="error" id="fullnameError"></small>
-        </div>
+        <form class="auth-form" id="registerForm" novalidate>
+          <div class="field">
+            <label for="fullname">Họ và tên</label>
+            <input
+              type="text"
+              id="fullname"
+              name="fullname"
+              placeholder="Nguyễn Văn A"
+              minlength="2"
+              required
+              autocomplete="name"
+            />
+            <small class="error" id="fullnameError"></small>
+          </div>
 
-        <div class="field">
-          <label for="email">Email</label>
-          <input
-            type="email"
-            id="email"
-            name="email"
-            placeholder="ban@example.com"
-            required
-            autocomplete="email"
-          />
-          <small class="error" id="emailError"></small>
-        </div>
+          <div class="field">
+            <label for="email">Email</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              placeholder="ban@example.com"
+              required
+              autocomplete="email"
+            />
+            <small class="error" id="emailError"></small>
+          </div>
 
-        <div class="field">
-          <label for="password">Mật khẩu</label>
-          <input
-            type="password"
-            id="password"
-            name="password"
-            placeholder="Ít nhất 6 ký tự"
-            minlength="6"
-            required
-            autocomplete="new-password"
-          />
-          <small class="error" id="passwordError"></small>
-        </div>
+          <div class="field">
+            <label for="password">Mật khẩu</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              placeholder="Ít nhất 8 ký tự"
+              minlength="8"
+              required
+              autocomplete="new-password"
+            />
+            <small class="error" id="passwordError"></small>
+          </div>
 
-        <div class="field">
-          <label for="confirmPassword">Nhập lại mật khẩu</label>
-          <input
-            type="password"
-            id="confirmPassword"
-            name="confirmPassword"
-            placeholder="Nhập lại mật khẩu"
-            minlength="6"
-            required
-            autocomplete="new-password"
-          />
-          <small class="error" id="confirmPasswordError"></small>
-        </div>
+          <div class="field">
+            <label for="confirmPassword">Nhập lại mật khẩu</label>
+            <input
+              type="password"
+              id="confirmPassword"
+              name="confirmPassword"
+              placeholder="Nhập lại mật khẩu"
+              minlength="8"
+              required
+              autocomplete="new-password"
+            />
+            <small class="error" id="confirmPasswordError"></small>
+          </div>
 
-        <div class="field-row">
-          <label class="checkbox">
-            <input type="checkbox" name="agree" required />
-            <span>Tôi đồng ý với <a href="#" class="link">Điều khoản</a></span>
-          </label>
-        </div>
+          <div class="field-row">
+            <label class="checkbox">
+              <input type="checkbox" name="agree" required />
+              <span
+                >Tôi đồng ý với <a href="#" class="link">Điều khoản</a></span
+              >
+            </label>
+          </div>
 
-        <button type="submit" class="btn-primary">Đăng ký</button>
+          <button type="submit" class="btn-primary">Đăng ký</button>
 
-        <p class="auth-footer">
-          Đã có tài khoản?
-          <a href="index.html" class="link">Đăng nhập</a>
-        </p>
-      </form>
-    </section>
-  </main>
+          <p class="auth-footer">
+            Đã có tài khoản?
+            <a href="index.html" class="link">Đăng nhập</a>
+          </p>
+        </form>
+      </section>
+    </main>
 
-  <script src="config.js"></script>
-  <script src="script.js"></script>
-</body>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="script.js"></script>
+  </body>
 </html>

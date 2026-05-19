@@ -1,2 +1,0 @@
-echo "🧪 Chạy test trước khi push..."
-npm test

@@ -1,211 +1,70 @@
 // ============================================================
-//  CẤU HÌNH KẾT NỐI BACKEND
+//  CẤU HÌNH SUPABASE
 // ============================================================
-//  Frontend được serve từ chính backend (express.static),
-//  nên dùng relative URL "/api" — không cần CORS, không cần
-//  hardcode hostname/port.
+//  Project URL + anon key lấy từ Supabase Dashboard → Project Settings → API
 // ============================================================
 
-const API_URL = "/api";
+const SUPABASE_URL = "https://iwxsrjvisxbhoakgcvgf.supabase.co";
+const SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml3eHNyanZpc3hiaG9ha2djdmdmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkxMTg3ODYsImV4cCI6MjA5NDY5NDc4Nn0.h8ichGNE2Hfts1twEX83z91JPhTNH11ssM6oSOo7SgI";
 
-// LocalStorage keys
-const STORAGE_KEYS = {
-  ACCESS_TOKEN: "peak.accessToken",
-  USER_CACHE: "peak.user",
-};
+// Tạo Supabase client (dùng chung toàn app)
+const supabaseClient = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY
+);
 
 // ============================================================
-//  API CLIENT
+//  HELPER: Lấy avatar URL từ profile, fallback ui-avatars
 // ============================================================
-//  Helper gọi API với:
-//  - credentials: 'include' để gửi/nhận refresh cookie
-//  - Authorization Bearer khi đã login
-//  - Auto refresh token khi gặp 401, retry 1 lần
-// ============================================================
-
-let isRefreshing = false;
-let refreshPromise = null;
-
-async function refreshAccessToken() {
-  // Tránh refresh nhiều lần cùng lúc nếu nhiều request fail cùng lúc
-  if (isRefreshing) return refreshPromise;
-  isRefreshing = true;
-  refreshPromise = (async () => {
-    try {
-      const res = await fetch(`${API_URL}/auth/refresh`, {
-        method: "POST",
-        credentials: "include",
-      });
-      if (!res.ok) return null;
-      const data = await res.json();
-      localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, data.accessToken);
-      return data.accessToken;
-    } finally {
-      isRefreshing = false;
-      refreshPromise = null;
-    }
-  })();
-  return refreshPromise;
-}
-
-async function apiCall(method, path, body, options = {}) {
-  const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
-
-  const headers = {
-    "Content-Type": "application/json",
-    ...(options.headers || {}),
-  };
-  if (token && !options.skipAuth) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-
-  const doFetch = () =>
-    fetch(`${API_URL}${path}`, {
-      method,
-      headers,
-      credentials: "include",
-      body: body ? JSON.stringify(body) : undefined,
-    });
-
-  let res;
-  try {
-    res = await doFetch();
-  } catch (err) {
-    // Network error: backend không chạy, mất mạng, CORS block, etc.
-    console.error("[apiCall] Network error:", err);
-    return {
-      ok: false,
-      status: 0,
-      data: {
-        message:
-          "Không kết nối được server. Kiểm tra backend có đang chạy không (http://localhost:3000).",
-      },
-    };
-  }
-
-  // Nếu 401/403 và không phải request auth, thử refresh token rồi retry 1 lần
-  if (
-    (res.status === 401 || res.status === 403) &&
-    !options.skipAuth &&
-    !options.isRetry &&
-    token
-  ) {
-    const newToken = await refreshAccessToken();
-    if (newToken) {
-      headers.Authorization = `Bearer ${newToken}`;
-      try {
-        res = await doFetch();
-      } catch (err) {
-        return {
-          ok: false,
-          status: 0,
-          data: { message: "Không kết nối được server" },
-        };
-      }
-    } else {
-      localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
-    }
-  }
-
-  const data = await res.json().catch(() => ({}));
-  return { ok: res.ok, status: res.status, data };
+function getDefaultAvatarUrl(name) {
+  const safeName = encodeURIComponent(name || "User");
+  return `https://ui-avatars.com/api/?name=${safeName}&background=4f46e5&color=fff&size=128&bold=true`;
 }
 
 // ============================================================
-//  AUTH HELPERS
+//  HELPER: Lấy session hiện tại
 // ============================================================
-const auth = {
-  async login({ email, password }) {
-    const { ok, status, data } = await apiCall(
-      "POST",
-      "/auth/login",
-      { email, password },
-      { skipAuth: true }
-    );
-    if (ok) localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, data.accessToken);
-    return { ok, status, data };
-  },
-
-  async register({ email, password, fullName }) {
-    // Backend yêu cầu username — sinh từ email (phần trước @)
-    const username = email
-      .split("@")[0]
-      .toLowerCase()
-      .replace(/[^a-z0-9_]/g, "_");
-    return apiCall(
-      "POST",
-      "/auth/register",
-      { username, email, password, fullName },
-      { skipAuth: true }
-    );
-  },
-
-  async me() {
-    return apiCall("GET", "/auth/me");
-  },
-
-  async logout() {
-    const result = await apiCall("POST", "/auth/logout");
-    localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
-    localStorage.removeItem(STORAGE_KEYS.USER_CACHE);
-    return result;
-  },
-
-  async updateProfile(updates) {
-    return apiCall("PATCH", "/auth/profile", updates);
-  },
-
-  async forgotPassword({ email }) {
-    return apiCall(
-      "POST",
-      "/auth/forgot-password",
-      { email },
-      { skipAuth: true }
-    );
-  },
-
-  async resetPassword({ token, password }) {
-    return apiCall(
-      "POST",
-      "/auth/reset-password",
-      { token, password },
-      { skipAuth: true }
-    );
-  },
-
-  async uploadAvatar(file) {
-    const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
-    const fd = new FormData();
-    fd.append("avatar", file);
-    const res = await fetch(`${API_URL}/auth/avatar`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-      credentials: "include",
-      body: fd, // KHÔNG set Content-Type — browser tự thêm boundary cho multipart
-    });
-    const data = await res.json().catch(() => ({}));
-    return { ok: res.ok, status: res.status, data };
-  },
-
-  isLoggedIn() {
-    return !!localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
-  },
-};
+async function requireSession() {
+  const { data } = await supabaseClient.auth.getSession();
+  if (!data.session) {
+    window.location.href = "index.html";
+    return null;
+  }
+  return data.session;
+}
 
 // ============================================================
-//  POSTS API
+//  HELPER: Lấy profile từ DB, tự tạo nếu chưa có
 // ============================================================
-const posts = {
-  list() {
-    return apiCall("GET", "/posts");
-  },
-  create(content) {
-    return apiCall("POST", "/posts", { content });
-  },
-  remove(id) {
-    return apiCall("DELETE", `/posts/${id}`);
-  },
-  toggleLike(id) {
-    return apiCall("POST", `/posts/${id}/like`);
-  },
-};
+async function fetchProfile(userId) {
+  const { data, error } = await supabaseClient
+    .from("profiles")
+    .select("*")
+    .eq("id", userId)
+    .maybeSingle();
+  if (error) {
+    console.error("[fetchProfile]", error);
+    return null;
+  }
+  return data;
+}
+
+// ============================================================
+//  HELPER: Map lỗi Supabase Auth sang tiếng Việt
+// ============================================================
+function translateAuthError(message) {
+  if (!message) return "Có lỗi xảy ra, vui lòng thử lại";
+  const m = message.toLowerCase();
+  if (m.includes("invalid login credentials"))
+    return "Email hoặc mật khẩu không đúng";
+  if (m.includes("user already registered") || m.includes("already exists"))
+    return "Email này đã được đăng ký";
+  if (m.includes("email not confirmed"))
+    return "Email chưa xác nhận. Vui lòng kiểm tra hộp thư";
+  if (m.includes("password should be at least"))
+    return "Mật khẩu quá ngắn (tối thiểu 6 ký tự)";
+  if (m.includes("rate limit"))
+    return "Bạn thử quá nhiều lần. Đợi vài phút rồi thử lại";
+  return message;
+}
