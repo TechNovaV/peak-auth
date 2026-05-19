@@ -192,9 +192,10 @@ if (forgotForm) {
     }
 
     setLoading(submitBtn, true);
-    // Supabase tự gửi email với link reset (cần cấu hình SMTP trong Dashboard)
+    // Tự lấy đúng base URL dù chạy localhost hay GitHub Pages
+    const baseUrl = window.location.href.replace(/[^/]*$/, "");
     const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin + "/reset.html",
+      redirectTo: baseUrl + "reset.html",
     });
     setLoading(submitBtn, false, "Gửi link");
 
@@ -214,21 +215,58 @@ if (forgotForm) {
 // ============================================================
 const resetForm = document.getElementById("resetForm");
 if (resetForm) {
-  // Supabase đặt session từ URL fragment khi user click link trong email
-  // SDK tự xử lý — không cần đọc URL thủ công
+  const tokenErrorEl = document.getElementById("tokenError");
+  const submitBtn = resetForm.querySelector("button[type=submit]");
+
+  // Khoá nút submit cho đến khi Supabase xác nhận session hợp lệ
+  submitBtn.disabled = true;
+  submitBtn.style.opacity = "0.45";
+
+  function unlockForm() {
+    submitBtn.disabled = false;
+    submitBtn.style.opacity = "1";
+    tokenErrorEl.classList.add("hidden");
+  }
+
+  function showTokenError(msg) {
+    tokenErrorEl.textContent = msg;
+    tokenErrorEl.classList.remove("hidden");
+    submitBtn.disabled = true;
+    submitBtn.style.opacity = "0.45";
+  }
+
+  // Supabase SDK v2 tự parse URL hash (#access_token=...&type=recovery)
+  // và phát ra event PASSWORD_RECOVERY khi token hợp lệ
+  supabaseClient.auth.onAuthStateChange((event, session) => {
+    if (event === "PASSWORD_RECOVERY") {
+      unlockForm();
+    }
+  });
+
+  // Nếu user đã có session hợp lệ (ví dụ reload trang)
+  supabaseClient.auth.getSession().then(({ data: { session } }) => {
+    if (session) unlockForm();
+  });
+
+  // Sau 5 giây nếu vẫn khoá → link hết hạn hoặc sai
+  setTimeout(() => {
+    if (submitBtn.disabled) {
+      showTokenError(
+        "Link đặt lại mật khẩu không hợp lệ hoặc đã hết hạn (1 giờ). Vui lòng gửi lại yêu cầu."
+      );
+    }
+  }, 5000);
 
   resetForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const password = document.getElementById("password").value;
     const confirmPassword = document.getElementById("confirmPassword").value;
-    const submitBtn = resetForm.querySelector("button[type=submit]");
-    const tokenErrorEl = document.getElementById("tokenError");
 
     clearAllErrors(["password", "confirmPassword"]);
 
     let valid = true;
-    if (!password || password.length < 6) {
-      showError("password", "Mật khẩu phải có ít nhất 6 ký tự");
+    if (!password || password.length < 8) {
+      showError("password", "Mật khẩu phải có ít nhất 8 ký tự");
       valid = false;
     }
     if (password !== confirmPassword) {
@@ -247,8 +285,8 @@ if (resetForm) {
       return;
     }
 
-    alert("✓ Đổi mật khẩu thành công! Vui lòng đăng nhập lại.");
     await supabaseClient.auth.signOut();
+    alert("✓ Đổi mật khẩu thành công! Vui lòng đăng nhập lại.");
     window.location.href = "index.html";
   });
 }
