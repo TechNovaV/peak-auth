@@ -78,7 +78,7 @@ describe("POST /api/auth/login", () => {
     const setCookie = res.headers["set-cookie"]?.join(";") || "";
     expect(setCookie).toMatch(/refreshToken=/);
     expect(setCookie).toMatch(/HttpOnly/);
-    expect(setCookie).toMatch(/SameSite=Strict/i);
+    expect(setCookie).toMatch(/SameSite=Lax/i);
   });
 
   it("sai password → 401", async () => {
@@ -94,6 +94,50 @@ describe("POST /api/auth/login", () => {
   it("username quá ngắn → 400 (validation)", async () => {
     const res = await login({ username: "x", password: "password123" });
     expect(res.status).toBe(400);
+  });
+
+  it("login bằng EMAIL thay vì username → 200", async () => {
+    const res = await request(app).post("/api/auth/login").send({
+      email: VALID_USER.email,
+      password: VALID_USER.password,
+    });
+    expect(res.status).toBe(200);
+    expect(res.body.accessToken).toBeDefined();
+  });
+
+  it("login bằng email không tồn tại → 401", async () => {
+    const res = await request(app).post("/api/auth/login").send({
+      email: "ghost@test.com",
+      password: "password123",
+    });
+    expect(res.status).toBe(401);
+  });
+
+  it("không có username VÀ email → 400", async () => {
+    const res = await request(app)
+      .post("/api/auth/login")
+      .send({ password: "password123" });
+    expect(res.status).toBe(400);
+  });
+});
+
+describe("POST /api/auth/register with fullName", () => {
+  it("fullName được lưu khi register", async () => {
+    const res = await request(app).post("/api/auth/register").send({
+      username: "fn_user",
+      password: "password123",
+      fullName: "Nguyễn Văn A",
+    });
+    expect(res.status).toBe(201);
+
+    const loginRes = await request(app).post("/api/auth/login").send({
+      username: "fn_user",
+      password: "password123",
+    });
+    const me = await request(app)
+      .get("/api/auth/me")
+      .set("Authorization", `Bearer ${loginRes.body.accessToken}`);
+    expect(me.body.user.fullName).toBe("Nguyễn Văn A");
   });
 });
 

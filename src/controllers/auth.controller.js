@@ -48,13 +48,15 @@ const setRefreshCookie = (res, token) =>
   res.cookie("refreshToken", token, {
     httpOnly: true,
     secure: NODE_ENV === "production",
-    sameSite: "strict",
+    // "lax" thay vì "strict" để cho phép cross-origin requests trong dev
+    // (frontend localhost:5500 → backend localhost:3000 vẫn same-site theo Lax)
+    sameSite: NODE_ENV === "production" ? "none" : "lax",
     maxAge: REFRESH_COOKIE_MAX_AGE,
   });
 
 exports.register = async (req, res, next) => {
   try {
-    const { username, password, email } = req.body;
+    const { username, password, email, fullName } = req.body;
     const credErr = validateCredentials(username, password);
     if (credErr) throw httpError(400, credErr);
     const emailErr = validateEmail(email);
@@ -70,7 +72,7 @@ exports.register = async (req, res, next) => {
 
     const hashed = await bcrypt.hash(password, SALT_ROUNDS);
 
-    const userData = { username, password: hashed };
+    const userData = { username, password: hashed, fullName: fullName || "" };
     let rawVerifyToken = null;
 
     if (email) {
@@ -106,11 +108,26 @@ exports.register = async (req, res, next) => {
 
 exports.login = async (req, res, next) => {
   try {
-    const { username, password } = req.body;
-    const err = validateCredentials(username, password);
-    if (err) throw httpError(400, err);
+    const { username, email, password } = req.body;
 
-    const user = await User.findOne({ username });
+    const pwdErr = validatePassword(password);
+    if (pwdErr) throw httpError(400, pwdErr);
+
+    if (!username && !email)
+      throw httpError(400, "Cần cung cấp username hoặc email");
+
+    if (username !== undefined) {
+      const err = validateUsername(username);
+      if (err) throw httpError(400, err);
+    }
+    if (email !== undefined) {
+      const err = validateEmail(email);
+      if (err) throw httpError(400, err);
+    }
+
+    const user = email
+      ? await User.findOne({ email: String(email).toLowerCase() })
+      : await User.findOne({ username });
 
     const isMatch = user
       ? await bcrypt.compare(password, user.password)
@@ -189,7 +206,7 @@ exports.logout = async (req, res, next) => {
 exports.me = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.sub).select(
-      "-password -refreshToken -resetPasswordToken -resetPasswordExpires -emailVerificationToken -emailVerificationExpires"
+      "-password -sessions -resetPasswordToken -resetPasswordExpires -emailVerificationToken -emailVerificationExpires"
     );
     if (!user) throw httpError(404, "Không tìm thấy người dùng");
     res.json({ user });
@@ -268,15 +285,24 @@ exports.deleteAccount = async (req, res, next) => {
 
 exports.updateProfile = async (req, res, next) => {
   try {
-    const { username, email } = req.body;
+    const { username, email, fullName } = req.body;
 
-    if (username === undefined && email === undefined)
-      throw httpError(400, "Cần cung cấp ít nhất username hoặc email");
+    if (username === undefined && email === undefined && fullName === undefined)
+      throw httpError(
+        400,
+        "Cần cung cấp ít nhất username, email hoặc fullName"
+      );
 
     const user = await User.findById(req.user.sub);
     if (!user) throw httpError(404, "Không tìm thấy người dùng");
 
     let rawVerifyToken = null;
+
+    if (fullName !== undefined) {
+      if (typeof fullName !== "string")
+        throw httpError(400, "fullName không hợp lệ");
+      user.fullName = fullName.trim();
+    }
 
     // Validate + apply username
     if (username !== undefined && username !== user.username) {
@@ -319,7 +345,7 @@ exports.updateProfile = async (req, res, next) => {
 
     // Trả về user không có field nhạy cảm
     const sanitized = await User.findById(user._id).select(
-      "-password -refreshToken -resetPasswordToken -resetPasswordExpires -emailVerificationToken -emailVerificationExpires"
+      "-password -sessions -resetPasswordToken -resetPasswordExpires -emailVerificationToken -emailVerificationExpires"
     );
 
     const payload = { message: "Cập nhật profile thành công", user: sanitized };
