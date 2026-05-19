@@ -17,31 +17,32 @@
         <div class="peak-card">
           <header class="peak-card-header">
             <img src="images/peak-logo.png" alt="PEAK!" class="peak-logo-img" />
-            <p class="peak-subtitle">Đặt lại mật khẩu</p>
+            <p class="peak-subtitle" data-i18n="forgot.subtitle">Đặt lại mật khẩu</p>
           </header>
 
           <form class="auth-form" id="forgotForm" novalidate>
-            <p class="peak-desc">Nhập email đăng ký. Chúng tôi sẽ gửi link đặt lại mật khẩu.</p>
+            <p class="peak-desc" data-i18n="forgot.desc">Nhập email đăng ký. Chúng tôi sẽ gửi link đặt lại mật khẩu.</p>
 
             <div class="field">
-              <label for="email">Email</label>
-              <input type="email" id="email" name="email" placeholder="ban@example.com" required autocomplete="email" />
+              <label for="email" data-i18n="field.email">Email</label>
+              <input type="email" id="email" name="email" placeholder="ban@example.com" data-i18n-placeholder="placeholder.email" required autocomplete="email" />
               <small class="error" id="emailError"></small>
             </div>
 
-            <button type="submit" class="btn-primary btn-neon">Gửi link</button>
+            <button type="submit" class="btn-primary btn-neon" data-i18n="forgot.btn">Gửi link</button>
 
             <div id="successMsg" class="hidden peak-success"></div>
 
             <p class="auth-footer">
-              Nhớ mật khẩu rồi?
-              <a href="index.html" class="link link-neon">Quay lại đăng nhập</a>
+              <span data-i18n="forgot.remember">Nhớ mật khẩu rồi?</span>
+              <a href="index.html" class="link link-neon" data-i18n="common.back_login">Quay lại đăng nhập</a>
             </p>
           </form>
         </div>
       </section>
     </main>
 
+    <script src="translations.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js"></script>
     <script src="script.js"></script>

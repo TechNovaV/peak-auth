@@ -11,36 +11,37 @@
     <section class="auth-card hidden" id="dashboardRoot">
       <header class="auth-header">
         <img src="images/peak-logo.png" alt="PEAK!" class="peak-logo-img" style="width:160px;margin-bottom:4px;" />
-        <p class="subtitle">Chào mừng đến với cộng đồng</p>
+        <p class="subtitle" data-i18n="dashboard.subtitle">Chào mừng đến với cộng đồng</p>
       </header>
 
       <div class="profile-info">
         <div class="info-row">
-          <span class="info-label">Tên:</span>
+          <span class="info-label" data-i18n="dashboard.name">Tên:</span>
           <span class="info-value" id="welcomeName"></span>
         </div>
         <div class="info-row">
-          <span class="info-label">Email:</span>
+          <span class="info-label" data-i18n="dashboard.email_label">Email:</span>
           <span class="info-value" id="welcomeEmail"></span>
         </div>
         <div class="info-row">
-          <span class="info-label">User ID:</span>
+          <span class="info-label" data-i18n="dashboard.user_id">User ID:</span>
           <span class="info-value mono" id="welcomeId"></span>
         </div>
       </div>
 
-      <button type="button" id="logoutBtn" class="btn-primary">
+      <button type="button" id="logoutBtn" class="btn-primary" data-i18n="common.logout">
         Đăng xuất
       </button>
 
-      <p class="auth-footer">
+      <p class="auth-footer" data-i18n="dashboard.next">
         Bước tiếp theo: xây dựng tính năng chat
       </p>
     </section>
   </main>
 
+  <script src="translations.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="config.js"></script>
+  <script src="config.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

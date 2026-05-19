@@ -17,52 +17,53 @@
         <div class="peak-card">
           <header class="peak-card-header">
             <img src="images/peak-logo.png" alt="PEAK!" class="peak-logo-img" />
-            <p class="peak-subtitle">Tạo tài khoản mới</p>
+            <p class="peak-subtitle" data-i18n="register.subtitle">Tạo tài khoản mới</p>
           </header>
 
           <form class="auth-form" id="registerForm" novalidate>
             <div class="field">
-              <label for="fullname">Họ và tên</label>
-              <input type="text" id="fullname" name="fullname" placeholder="Nguyễn Văn A" minlength="2" required autocomplete="name" />
+              <label for="fullname" data-i18n="field.fullname">Họ và tên</label>
+              <input type="text" id="fullname" name="fullname" placeholder="Nguyễn Văn A" data-i18n-placeholder="placeholder.fullname" minlength="2" required autocomplete="name" />
               <small class="error" id="fullnameError"></small>
             </div>
 
             <div class="field">
-              <label for="email">Email</label>
-              <input type="email" id="email" name="email" placeholder="ban@example.com" required autocomplete="email" />
+              <label for="email" data-i18n="field.email">Email</label>
+              <input type="email" id="email" name="email" placeholder="ban@example.com" data-i18n-placeholder="placeholder.email" required autocomplete="email" />
               <small class="error" id="emailError"></small>
             </div>
 
             <div class="field">
-              <label for="password">Mật khẩu</label>
-              <input type="password" id="password" name="password" placeholder="Ít nhất 8 ký tự" minlength="8" required autocomplete="new-password" />
+              <label for="password" data-i18n="field.password">Mật khẩu</label>
+              <input type="password" id="password" name="password" placeholder="Ít nhất 8 ký tự" data-i18n-placeholder="placeholder.password" minlength="8" required autocomplete="new-password" />
               <small class="error" id="passwordError"></small>
             </div>
 
             <div class="field">
-              <label for="confirmPassword">Nhập lại mật khẩu</label>
-              <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Nhập lại mật khẩu" minlength="8" required autocomplete="new-password" />
+              <label for="confirmPassword" data-i18n="field.confirm_password">Nhập lại mật khẩu</label>
+              <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Nhập lại mật khẩu" data-i18n-placeholder="placeholder.confirm_password" minlength="8" required autocomplete="new-password" />
               <small class="error" id="confirmPasswordError"></small>
             </div>
 
             <div class="field-row">
               <label class="checkbox">
                 <input type="checkbox" name="agree" required />
-                <span>Tôi đồng ý với <a href="#" class="link link-neon">Điều khoản</a></span>
+                <span><span data-i18n="register.agree">Tôi đồng ý với</span> <a href="#" class="link link-neon" data-i18n="register.terms">Điều khoản</a></span>
               </label>
             </div>
 
-            <button type="submit" class="btn-primary btn-neon">Đăng ký</button>
+            <button type="submit" class="btn-primary btn-neon" data-i18n="register.btn">Đăng ký</button>
 
             <p class="auth-footer">
-              Đã có tài khoản?
-              <a href="index.html" class="link link-neon">Đăng nhập</a>
+              <span data-i18n="register.have_account">Đã có tài khoản?</span>
+              <a href="index.html" class="link link-neon" data-i18n="register.login_link">Đăng nhập</a>
             </p>
           </form>
         </div>
       </section>
     </main>
 
+    <script src="translations.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js"></script>
     <script src="script.js"></script>

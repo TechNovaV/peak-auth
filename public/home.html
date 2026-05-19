@@ -13,20 +13,20 @@
       <a href="home.html" class="brand"><img src="images/peak-logo.png" alt="PEAK!" class="brand-logo" /></a>
       <div class="search-box">
         <span class="search-icon">⌕</span>
-        <input type="text" placeholder="Tìm kiếm trên PEAK!" />
+        <input type="text" placeholder="Tìm kiếm trên PEAK!" data-i18n-placeholder="home.search_placeholder" />
       </div>
     </div>
 
     <nav class="nav-center">
-      <a href="#" class="nav-tab active" title="Trang chủ">⌂</a>
-      <a href="#" class="nav-tab" title="Bạn bè">☺</a>
-      <a href="#" class="nav-tab" title="Video">▶</a>
-      <a href="#" class="nav-tab" title="Nhóm">⚇</a>
+      <a href="#" class="nav-tab active" title="Trang chủ" data-i18n-title="home.nav.home">⌂</a>
+      <a href="#" class="nav-tab" title="Bạn bè" data-i18n-title="home.nav.friends">☺</a>
+      <a href="#" class="nav-tab" title="Video" data-i18n-title="home.nav.videos">▶</a>
+      <a href="#" class="nav-tab" title="Nhóm" data-i18n-title="home.nav.groups">⚇</a>
     </nav>
 
     <div class="nav-right">
-      <button class="icon-btn" title="Tin nhắn">✉</button>
-      <button class="icon-btn" title="Thông báo">♪</button>
+      <button class="icon-btn" title="Tin nhắn" data-i18n-title="home.nav.messages">✉</button>
+      <button class="icon-btn" title="Thông báo" data-i18n-title="home.nav.notifications">♪</button>
 
       <div class="avatar-menu">
         <button class="avatar-btn" id="avatarBtn" title="Tài khoản">
@@ -42,17 +42,17 @@
           </div>
           <hr />
           <a href="profile.html" class="dropdown-item">
-            <span class="dd-icon">👤</span> Trang cá nhân
+            <span class="dd-icon">👤</span> <span data-i18n="home.dropdown.profile">Trang cá nhân</span>
           </a>
           <a href="#" class="dropdown-item">
-            <span class="dd-icon">⚙</span> Cài đặt
+            <span class="dd-icon">⚙</span> <span data-i18n="home.dropdown.settings">Cài đặt</span>
           </a>
           <a href="#" class="dropdown-item">
-            <span class="dd-icon">?</span> Trợ giúp
+            <span class="dd-icon">?</span> <span data-i18n="home.dropdown.help">Trợ giúp</span>
           </a>
           <hr />
           <button class="dropdown-item logout" id="logoutBtn">
-            <span class="dd-icon">⏻</span> Đăng xuất
+            <span class="dd-icon">⏻</span> <span data-i18n="common.logout">Đăng xuất</span>
           </button>
         </div>
       </div>
@@ -68,22 +68,22 @@
         <span id="sideName">Bạn</span>
       </a>
       <a href="#" class="side-item">
-        <span class="side-icon">👥</span> Bạn bè
+        <span class="side-icon">👥</span> <span data-i18n="home.sidebar.friends">Bạn bè</span>
       </a>
       <a href="#" class="side-item">
-        <span class="side-icon">⚇</span> Nhóm
+        <span class="side-icon">⚇</span> <span data-i18n="home.sidebar.groups">Nhóm</span>
       </a>
       <a href="#" class="side-item">
-        <span class="side-icon">▶</span> Video
+        <span class="side-icon">▶</span> <span data-i18n="home.sidebar.videos">Video</span>
       </a>
       <a href="#" class="side-item">
-        <span class="side-icon">🛒</span> Marketplace
+        <span class="side-icon">🛒</span> <span data-i18n="home.sidebar.marketplace">Marketplace</span>
       </a>
       <a href="#" class="side-item">
-        <span class="side-icon">🕒</span> Kỷ niệm
+        <span class="side-icon">🕒</span> <span data-i18n="home.sidebar.memories">Kỷ niệm</span>
       </a>
       <a href="#" class="side-item">
-        <span class="side-icon">🔖</span> Đã lưu
+        <span class="side-icon">🔖</span> <span data-i18n="home.sidebar.saved">Đã lưu</span>
       </a>
     </aside>
 
@@ -97,6 +97,7 @@
             <textarea
               id="composerInput"
               placeholder="Bạn đang nghĩ gì thế?"
+              data-i18n-placeholder="home.composer.placeholder"
               maxlength="1000"
               rows="2"
               style="
@@ -121,6 +122,7 @@
               class="btn-primary"
               id="composerSubmit"
               style="width: auto; padding: 8px 24px"
+              data-i18n="home.composer.post"
             >
               Đăng
             </button>
@@ -134,14 +136,14 @@
           id="postsLoading"
           style="text-align: center; color: #6b7280; padding: 24px"
         >
-          Đang tải bài viết...
+          <span data-i18n="home.posts.loading">Đang tải bài viết...</span>
         </p>
       </div>
     </main>
 
     <!-- RIGHT SIDEBAR -->
     <aside class="sidebar sidebar-right">
-      <h3 class="side-title">Người liên hệ</h3>
+      <h3 class="side-title" data-i18n="home.contacts">Người liên hệ</h3>
       <a href="#" class="contact-item">
         <img src="https://ui-avatars.com/api/?name=L+H&background=ec4899&color=fff&size=64" alt="" />
         <span>Lê Hương</span>
@@ -167,8 +169,9 @@
     </aside>
   </div>
 
+  <script src="translations.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="config.js"></script>
+  <script src="config.js"></script>
   <script src="script.js"></script>
 </body>
 </html>
