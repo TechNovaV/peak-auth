@@ -278,4 +278,119 @@ router.get("/me", verifyToken, authController.me);
  */
 router.post("/change-password", verifyToken, authController.changePassword);
 
+/**
+ * @openapi
+ * /api/auth/profile:
+ *   patch:
+ *     tags: [User]
+ *     summary: Cập nhật username hoặc email
+ *     description: |
+ *       Yêu cầu Bearer token. Đổi username và/hoặc email.
+ *       Đổi email → reset isVerified=false, sinh verifyToken mới + gửi email.
+ *       Đổi sang giá trị cũ = no-op (không reset verify).
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             description: "Cần ít nhất 1 field"
+ *             properties:
+ *               username: { type: string, minLength: 3 }
+ *               email: { type: string, format: email }
+ *     responses:
+ *       200: { description: Cập nhật thành công }
+ *       400: { $ref: '#/components/responses/BadRequest' }
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ *       409: { $ref: '#/components/responses/Conflict' }
+ */
+router.patch("/profile", verifyToken, authController.updateProfile);
+
+/**
+ * @openapi
+ * /api/auth/account:
+ *   delete:
+ *     tags: [User]
+ *     summary: Xóa tài khoản vĩnh viễn
+ *     description: |
+ *       Hard delete user khỏi DB. Yêu cầu xác nhận password để chống xóa nhầm.
+ *       Sau khi xóa: clear refresh cookie, access token cũ sẽ trả 404 nếu dùng.
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [password]
+ *             properties:
+ *               password: { type: string, example: "password123" }
+ *     responses:
+ *       200: { description: Xóa thành công }
+ *       400: { $ref: '#/components/responses/BadRequest' }
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ *       403: { $ref: '#/components/responses/Forbidden' }
+ *       404: { $ref: '#/components/responses/NotFound' }
+ */
+router.delete("/account", verifyToken, authController.deleteAccount);
+
+/**
+ * @openapi
+ * /api/auth/sessions:
+ *   get:
+ *     tags: [User]
+ *     summary: Liệt kê các session đang active
+ *     description: Trả về danh sách session (mỗi lần login = 1 session). Session hiện tại có field `current: true`.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Danh sách session
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 count: { type: integer }
+ *                 sessions:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       _id: { type: string }
+ *                       userAgent: { type: string }
+ *                       ip: { type: string }
+ *                       createdAt: { type: string, format: date-time }
+ *                       lastUsed: { type: string, format: date-time }
+ *                       current: { type: boolean }
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ */
+router.get("/sessions", verifyToken, authController.listSessions);
+
+/**
+ * @openapi
+ * /api/auth/sessions/{id}:
+ *   delete:
+ *     tags: [User]
+ *     summary: Thu hồi (revoke) 1 session
+ *     description: Logout 1 thiết bị cụ thể. Refresh token của session đó không dùng được nữa.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema: { type: string }
+ *         description: Session ID (lấy từ GET /sessions)
+ *     responses:
+ *       200: { description: Đã thu hồi }
+ *       400: { $ref: '#/components/responses/BadRequest' }
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ *       404: { $ref: '#/components/responses/NotFound' }
+ */
+router.delete("/sessions/:id", verifyToken, authController.revokeSession);
+
 module.exports = router;

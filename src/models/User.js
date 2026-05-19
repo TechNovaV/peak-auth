@@ -1,5 +1,16 @@
 const mongoose = require("mongoose");
 
+// Mỗi session = 1 lần login (1 thiết bị/browser)
+const sessionSchema = new mongoose.Schema(
+  {
+    tokenHash: { type: String, required: true, index: true },
+    userAgent: { type: String, default: "" },
+    ip: { type: String, default: "" },
+    lastUsed: { type: Date, default: Date.now },
+  },
+  { timestamps: { createdAt: true, updatedAt: false } }
+);
+
 const userSchema = new mongoose.Schema(
   {
     username: { type: String, required: true, unique: true, index: true },
@@ -8,11 +19,11 @@ const userSchema = new mongoose.Schema(
       type: String,
       lowercase: true,
       trim: true,
-      sparse: true, // cho phép null trùng nhau (user cũ chưa có email)
+      sparse: true,
       unique: true,
     },
     role: { type: String, enum: ["user", "admin"], default: "user" },
-    refreshToken: { type: String, default: null },
+    sessions: { type: [sessionSchema], default: [] },
     resetPasswordToken: { type: String, default: null, index: true },
     resetPasswordExpires: { type: Date, default: null },
     isVerified: { type: Boolean, default: false },

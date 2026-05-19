@@ -1,8 +1,10 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const mongoose = require("mongoose");
 const User = require("../models/User");
 const {
   validateCredentials,
+  validateUsername,
   validatePassword,
   validateEmail,
   httpError,
@@ -28,17 +30,19 @@ const {
 const DUMMY_HASH =
   "$2a$12$CwTycUXWue0Thq9StjUM0uJ8tnZjL2gqgPmQzQXZmZ3hY9oFrEZQK";
 
-const signAccessToken = (user) =>
-  jwt.sign({ sub: user._id.toString(), role: user.role }, JWT_ACCESS_SECRET, {
-    expiresIn: ACCESS_TOKEN_TTL,
-    issuer: "peak-app",
-  });
+const signAccessToken = (user, sid) =>
+  jwt.sign(
+    { sub: user._id.toString(), role: user.role, sid: sid.toString() },
+    JWT_ACCESS_SECRET,
+    { expiresIn: ACCESS_TOKEN_TTL, issuer: "peak-app" }
+  );
 
-const signRefreshToken = (user) =>
-  jwt.sign({ sub: user._id.toString() }, JWT_REFRESH_SECRET, {
-    expiresIn: REFRESH_TOKEN_TTL,
-    issuer: "peak-app",
-  });
+const signRefreshToken = (user, sid) =>
+  jwt.sign(
+    { sub: user._id.toString(), sid: sid.toString() },
+    JWT_REFRESH_SECRET,
+    { expiresIn: REFRESH_TOKEN_TTL, issuer: "peak-app" }
+  );
 
 const setRefreshCookie = (res, token) =>
   res.cookie("refreshToken", token, {
@@ -114,10 +118,18 @@ exports.login = async (req, res, next) => {
 
     if (!user || !isMatch) throw httpError(401, "Sai tài khoản hoặc mật khẩu");
 
-    const accessToken = signAccessToken(user);
-    const refreshToken = signRefreshToken(user);
+    // Pre-generate session ID để gắn vào cả JWT lẫn DB
+    const sid = new mongoose.Types.ObjectId();
+    const accessToken = signAccessToken(user, sid);
+    const refreshToken = signRefreshToken(user, sid);
 
-    user.refreshToken = refreshToken;
+    user.sessions.push({
+      _id: sid,
+      tokenHash: hashToken(refreshToken),
+      userAgent: req.headers["user-agent"] || "",
+      ip: req.ip || "",
+      lastUsed: new Date(),
+    });
     await user.save();
 
     setRefreshCookie(res, refreshToken);
@@ -140,10 +152,16 @@ exports.refreshToken = async (req, res, next) => {
     }
 
     const user = await User.findById(decoded.sub);
-    if (!user || user.refreshToken !== token)
-      throw httpError(403, "Refresh Token không khớp");
+    if (!user) throw httpError(403, "Refresh Token không khớp");
 
-    const newAccessToken = signAccessToken(user);
+    const tokenHash = hashToken(token);
+    const session = user.sessions.find((s) => s.tokenHash === tokenHash);
+    if (!session) throw httpError(403, "Refresh Token không khớp");
+
+    session.lastUsed = new Date();
+    await user.save();
+
+    const newAccessToken = signAccessToken(user, session._id);
     res.json({ accessToken: newAccessToken });
   } catch (err) {
     next(err);
@@ -155,9 +173,11 @@ exports.logout = async (req, res, next) => {
     const token = req.cookies?.refreshToken;
     if (!token) return res.sendStatus(204);
 
-    await User.findOneAndUpdate(
-      { refreshToken: token },
-      { refreshToken: null }
+    const tokenHash = hashToken(token);
+    // Chỉ xóa session khớp với cookie hiện tại — các session khác giữ nguyên
+    await User.updateOne(
+      { "sessions.tokenHash": tokenHash },
+      { $pull: { sessions: { tokenHash } } }
     );
     res.clearCookie("refreshToken");
     res.json({ message: "Đăng xuất thành công" });
@@ -173,6 +193,140 @@ exports.me = async (req, res, next) => {
     );
     if (!user) throw httpError(404, "Không tìm thấy người dùng");
     res.json({ user });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.listSessions = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.sub);
+    if (!user) throw httpError(404, "Không tìm thấy người dùng");
+
+    // Đánh dấu session hiện tại dựa vào sid trong JWT access token
+    const currentSid = req.user.sid;
+
+    const sessions = user.sessions.map((s) => ({
+      _id: s._id,
+      userAgent: s.userAgent,
+      ip: s.ip,
+      createdAt: s.createdAt,
+      lastUsed: s.lastUsed,
+      current: s._id.toString() === currentSid,
+    }));
+
+    res.json({ count: sessions.length, sessions });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.revokeSession = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.isValidObjectId(id))
+      throw httpError(400, "Session ID không hợp lệ");
+
+    const user = await User.findById(req.user.sub);
+    if (!user) throw httpError(404, "Không tìm thấy người dùng");
+
+    const session = user.sessions.id(id);
+    if (!session) throw httpError(404, "Session không tồn tại");
+
+    user.sessions.pull(id);
+    await user.save();
+
+    res.json({ message: "Đã thu hồi session" });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.deleteAccount = async (req, res, next) => {
+  try {
+    const { password } = req.body;
+    if (!password || typeof password !== "string")
+      throw httpError(400, "Cần xác nhận mật khẩu để xóa tài khoản");
+
+    const user = await User.findById(req.user.sub);
+    if (!user) throw httpError(404, "Không tìm thấy người dùng");
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) throw httpError(401, "Mật khẩu không đúng");
+
+    await User.findByIdAndDelete(user._id);
+    res.clearCookie("refreshToken");
+
+    res.json({
+      message: "Xóa tài khoản thành công. Mọi dữ liệu liên quan đã được xóa.",
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.updateProfile = async (req, res, next) => {
+  try {
+    const { username, email } = req.body;
+
+    if (username === undefined && email === undefined)
+      throw httpError(400, "Cần cung cấp ít nhất username hoặc email");
+
+    const user = await User.findById(req.user.sub);
+    if (!user) throw httpError(404, "Không tìm thấy người dùng");
+
+    let rawVerifyToken = null;
+
+    // Validate + apply username
+    if (username !== undefined && username !== user.username) {
+      const err = validateUsername(username);
+      if (err) throw httpError(400, err);
+      const exists = await User.findOne({ username });
+      if (exists) throw httpError(409, "Tên đăng nhập đã tồn tại!");
+      user.username = username;
+    }
+
+    // Validate + apply email
+    if (email !== undefined) {
+      const normalized = String(email).toLowerCase();
+      if (normalized !== user.email) {
+        if (!email) throw httpError(400, "Email không hợp lệ");
+        const err = validateEmail(email);
+        if (err) throw httpError(400, err);
+        const exists = await User.findOne({ email: normalized });
+        if (exists) throw httpError(409, "Email đã được sử dụng!");
+
+        user.email = normalized;
+        user.isVerified = false;
+
+        const { raw, hash } = generateToken();
+        rawVerifyToken = raw;
+        user.emailVerificationToken = hash;
+        user.emailVerificationExpires = new Date(
+          Date.now() + VERIFY_TOKEN_TTL_MS
+        );
+
+        await sendVerificationEmail({
+          to: normalized,
+          username: user.username,
+          verifyToken: raw,
+        }).catch((e) => console.error("[Mailer error]", e.message));
+      }
+    }
+
+    await user.save();
+
+    // Trả về user không có field nhạy cảm
+    const sanitized = await User.findById(user._id).select(
+      "-password -refreshToken -resetPasswordToken -resetPasswordExpires -emailVerificationToken -emailVerificationExpires"
+    );
+
+    const payload = { message: "Cập nhật profile thành công", user: sanitized };
+    if (NODE_ENV !== "production" && rawVerifyToken)
+      payload.verifyToken = rawVerifyToken;
+
+    res.json(payload);
   } catch (err) {
     next(err);
   }
@@ -198,7 +352,7 @@ exports.changePassword = async (req, res, next) => {
     if (!isMatch) throw httpError(401, "Mật khẩu hiện tại không đúng");
 
     user.password = await bcrypt.hash(newPassword, SALT_ROUNDS);
-    user.refreshToken = null; // Revoke mọi session đang mở (như reset password)
+    user.sessions = []; // Revoke mọi session đang mở (như reset password)
     await user.save();
 
     res.json({
@@ -337,7 +491,7 @@ exports.resetPassword = async (req, res, next) => {
     user.password = await bcrypt.hash(password, SALT_ROUNDS);
     user.resetPasswordToken = null;
     user.resetPasswordExpires = null;
-    user.refreshToken = null; // Revoke mọi session đang mở
+    user.sessions = []; // Revoke mọi session đang mở
     await user.save();
 
     res.json({
