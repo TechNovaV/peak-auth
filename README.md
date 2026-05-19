@@ -3,12 +3,15 @@
 Production-ready authentication & authorization API built with Node.js, Express, and MongoDB. Implements industry best practices: JWT access + refresh tokens, role-based access control, email verification, password reset, and multi-device session management.
 
 [![CI](https://github.com/TechNovaV/peak-auth/actions/workflows/ci.yml/badge.svg)](https://github.com/TechNovaV/peak-auth/actions/workflows/ci.yml)
+[![Deploy Docs](https://github.com/TechNovaV/peak-auth/actions/workflows/deploy-docs.yml/badge.svg)](https://github.com/TechNovaV/peak-auth/actions/workflows/deploy-docs.yml)
 [![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen)](https://nodejs.org)
 [![Tests](https://img.shields.io/badge/tests-97%20passing-success)](#testing)
 [![Coverage](https://img.shields.io/badge/coverage-~90%25-success)](#testing)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
-[![OpenAPI](https://img.shields.io/badge/OpenAPI-3.0-orange)](#api-documentation)
+[![OpenAPI](https://img.shields.io/badge/OpenAPI-3.0-orange)](https://technovav.github.io/peak-auth/)
 [![Code style: prettier](https://img.shields.io/badge/code_style-prettier-ff69b4)](https://prettier.io/)
+
+> 📖 **[Live API Documentation →](https://technovav.github.io/peak-auth/)**
 
 ---
 
@@ -68,7 +71,9 @@ Run twice to get two different secrets (access and refresh must differ).
 
 ## API Documentation
 
-Swagger UI runs at `http://localhost:3000/api-docs` when the server is up. Raw OpenAPI 3.0 spec at `/api-docs.json` (importable to Postman/Insomnia/Bruno).
+- **Live (public)**: [https://technovav.github.io/peak-auth/](https://technovav.github.io/peak-auth/) — Redoc, auto-deployed from `main`
+- **Local interactive**: http://localhost:3000/api-docs (Swagger UI with Try-it-out, requires `npm run dev`)
+- **Raw OpenAPI spec**: `/api-docs.json` (local) or [`docs/openapi.json`](docs/openapi.json) (importable to Postman/Insomnia/Bruno)
 
 ### Endpoints
 
@@ -212,6 +217,7 @@ GitHub      ──▶  CI workflow (Node 20 + Node 22 in parallel, ~2 min)
 - [x] CI/CD with GitHub Actions (Node 20 & 22 matrix)
 - [x] Pre-commit & pre-push hooks (Husky + lint-staged)
 - [x] Branch protection on main
+- [x] Public API docs on GitHub Pages (Redoc)
 - [ ] Deploy to Render / Railway with MongoDB Atlas
 - [ ] Real SMTP integration (Resend / Gmail / SendGrid)
 - [ ] Structured logging (pino) with request ID

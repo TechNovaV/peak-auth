@@ -343,7 +343,9 @@ router.delete("/account", verifyToken, authController.deleteAccount);
  *   get:
  *     tags: [User]
  *     summary: Liệt kê các session đang active
- *     description: Trả về danh sách session (mỗi lần login = 1 session). Session hiện tại có field `current: true`.
+ *     description: |
+ *       Trả về danh sách session. Mỗi lần login tạo 1 session.
+ *       Session hiện tại được đánh dấu `current` true.
  *     security:
  *       - bearerAuth: []
  *     responses:
