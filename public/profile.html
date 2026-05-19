@@ -20,8 +20,8 @@
 
   <main class="profile-page">
     <section class="profile-card">
-      <h1 class="profile-title">Trang cá nhân</h1>
-      <p class="profile-sub">Quản lý ảnh đại diện và thông tin của bạn</p>
+      <h1 class="profile-title" data-i18n="profile.title">Trang cá nhân</h1>
+      <p class="profile-sub" data-i18n="profile.subtitle">Quản lý ảnh đại diện và thông tin của bạn</p>
 
       <!-- Avatar uploader -->
       <div class="avatar-uploader">
@@ -36,18 +36,18 @@
           hidden
         />
       </div>
-      <p class="avatar-hint" id="avatarHint">Bấm icon máy ảnh để đổi ảnh đại diện (tối đa 2MB)</p>
+      <p class="avatar-hint" id="avatarHint" data-i18n="profile.avatar_hint">Bấm icon máy ảnh để đổi ảnh đại diện (tối đa 2MB)</p>
 
       <!-- Profile form -->
       <form id="profileForm" class="profile-form" novalidate>
         <div class="field">
-          <label for="fullName">Họ và tên</label>
+          <label for="fullName" data-i18n="profile.full_name">Họ và tên</label>
           <input type="text" id="fullName" name="fullName" maxlength="80" required />
           <small class="error" id="fullNameError"></small>
         </div>
 
         <div class="field">
-          <label for="username">Tên đăng nhập (username)</label>
+          <label for="username" data-i18n="profile.username">Tên đăng nhập (username)</label>
           <div class="input-prefix">
             <span class="prefix-text">@</span>
             <input
@@ -57,48 +57,51 @@
               maxlength="30"
               pattern="[a-z0-9_]+"
               placeholder="vd: thien_2k10"
+              data-i18n-placeholder="profile.username_placeholder"
               autocomplete="off"
             />
           </div>
           <small class="error" id="usernameError"></small>
-          <small class="hint">Chỉ chữ thường, số và dấu gạch dưới. Bạn bè sẽ tìm bạn qua tên này.</small>
+          <small class="hint" data-i18n="profile.username_hint">Chỉ chữ thường, số và dấu gạch dưới. Bạn bè sẽ tìm bạn qua tên này.</small>
         </div>
 
         <div class="field">
-          <label for="bio">Giới thiệu</label>
+          <label for="bio" data-i18n="profile.bio">Giới thiệu</label>
           <textarea
             id="bio"
             name="bio"
             maxlength="200"
             rows="3"
             placeholder="Vài dòng về bạn..."
+            data-i18n-placeholder="profile.bio_placeholder"
           ></textarea>
           <small class="hint"><span id="bioCount">0</span>/200 ký tự</small>
         </div>
 
         <div class="field-grid">
           <div class="field">
-            <label for="school">Trường</label>
-            <input type="text" id="school" name="school" maxlength="100" placeholder="THCS Nguyễn Huệ" />
+            <label for="school" data-i18n="profile.school">Trường</label>
+            <input type="text" id="school" name="school" maxlength="100" placeholder="THCS Nguyễn Huệ" data-i18n-placeholder="profile.school_placeholder" />
           </div>
           <div class="field">
-            <label for="class">Lớp</label>
-            <input type="text" id="class" name="class" maxlength="20" placeholder="9A2" />
+            <label for="class" data-i18n="profile.class">Lớp</label>
+            <input type="text" id="class" name="class" maxlength="20" placeholder="9A2" data-i18n-placeholder="profile.class_placeholder" />
           </div>
         </div>
 
         <div class="form-feedback" id="formFeedback"></div>
 
         <div class="form-actions">
-          <a href="home.html" class="btn-secondary">Hủy</a>
-          <button type="submit" class="btn-primary">Lưu thay đổi</button>
+          <a href="home.html" class="btn-secondary" data-i18n="profile.cancel">Hủy</a>
+          <button type="submit" class="btn-primary" data-i18n="profile.save">Lưu thay đổi</button>
         </div>
       </form>
     </section>
   </main>
 
+  <script src="translations.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="config.js"></script>
+  <script src="config.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

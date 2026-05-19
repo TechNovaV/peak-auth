@@ -22,17 +22,18 @@
         <div class="peak-card">
           <header class="peak-card-header">
             <img src="images/peak-logo.png" alt="PEAK!" class="peak-logo-img" />
-            <p class="peak-subtitle">Chào mừng quay trở lại!</p>
+            <p class="peak-subtitle" data-i18n="login.subtitle">Chào mừng quay trở lại!</p>
           </header>
 
           <form class="auth-form" id="loginForm" novalidate>
             <div class="field">
-              <label for="email">Email</label>
+              <label for="email" data-i18n="field.email">Email</label>
               <input
                 type="email"
                 id="email"
                 name="email"
                 placeholder="ban@example.com"
+                data-i18n-placeholder="placeholder.email"
                 required
                 autocomplete="email"
               />
@@ -40,12 +41,13 @@
             </div>
 
             <div class="field">
-              <label for="password">Mật khẩu</label>
+              <label for="password" data-i18n="field.password">Mật khẩu</label>
               <input
                 type="password"
                 id="password"
                 name="password"
                 placeholder="Ít nhất 8 ký tự"
+                data-i18n-placeholder="placeholder.password"
                 minlength="8"
                 required
                 autocomplete="current-password"
@@ -56,24 +58,25 @@
             <div class="field-row">
               <label class="checkbox">
                 <input type="checkbox" name="remember" />
-                <span>Ghi nhớ tôi</span>
+                <span data-i18n="login.remember">Ghi nhớ tôi</span>
               </label>
-              <a href="forgot.html" class="link link-neon">Quên mật khẩu?</a>
+              <a href="forgot.html" class="link link-neon" data-i18n="login.forgot">Quên mật khẩu?</a>
             </div>
 
-            <button type="submit" class="btn-primary btn-neon">
+            <button type="submit" class="btn-primary btn-neon" data-i18n="login.btn">
               Đăng nhập
             </button>
 
             <p class="auth-footer">
-              Chưa có tài khoản?
-              <a href="register.html" class="link link-neon">Đăng ký ngay</a>
+              <span data-i18n="login.no_account">Chưa có tài khoản?</span>
+              <a href="register.html" class="link link-neon" data-i18n="login.register_link">Đăng ký ngay</a>
             </p>
           </form>
         </div>
       </section>
     </main>
 
+    <script src="translations.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="config.js"></script>
     <script src="script.js"></script>

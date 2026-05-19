@@ -23,15 +23,18 @@ function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-function setLoading(button, isLoading, normalText) {
+function setLoading(button, isLoading, fallbackText) {
   if (!button) return;
   if (isLoading) {
     button.disabled = true;
-    button.dataset.original = button.textContent;
-    button.textContent = "Đang xử lý...";
+    button.dataset.originalText = button.textContent.trim();
+    button.textContent = typeof t === "function" ? t("loading") : "Đang xử lý...";
   } else {
     button.disabled = false;
-    button.textContent = button.dataset.original || normalText;
+    const i18nKey = button.getAttribute("data-i18n");
+    button.textContent = i18nKey && typeof t === "function"
+      ? t(i18nKey)
+      : (button.dataset.originalText || fallbackText || "");
   }
 }
 
@@ -42,15 +45,17 @@ function escapeHtml(text) {
 }
 
 function timeAgo(dateStr) {
+  const _t = typeof t === "function" ? t : (k) => k;
   const seconds = Math.floor((Date.now() - new Date(dateStr)) / 1000);
-  if (seconds < 60) return "vừa xong";
+  if (seconds < 60) return _t("time.just_now");
   const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return minutes + " phút trước";
+  if (minutes < 60) return minutes + _t("time.minutes_ago");
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return hours + " giờ trước";
+  if (hours < 24) return hours + _t("time.hours_ago");
   const days = Math.floor(hours / 24);
-  if (days < 7) return days + " ngày trước";
-  return new Date(dateStr).toLocaleDateString("vi-VN");
+  if (days < 7) return days + _t("time.days_ago");
+  const locale = typeof getLang === "function" && getLang() === "en" ? "en-US" : "vi-VN";
+  return new Date(dateStr).toLocaleDateString(locale);
 }
 
 // ============================================================
@@ -69,17 +74,17 @@ if (loginForm) {
 
     let valid = true;
     if (!email) {
-      showError("email", "Vui lòng nhập email");
+      showError("email", t("err.required_email"));
       valid = false;
     } else if (!isValidEmail(email)) {
-      showError("email", "Email không hợp lệ");
+      showError("email", t("err.invalid_email"));
       valid = false;
     }
     if (!password) {
-      showError("password", "Vui lòng nhập mật khẩu");
+      showError("password", t("err.required_password"));
       valid = false;
     } else if (password.length < 6) {
-      showError("password", "Mật khẩu phải có ít nhất 6 ký tự");
+      showError("password", t("err.password_min6"));
       valid = false;
     }
     if (!valid) return;
@@ -89,7 +94,7 @@ if (loginForm) {
       email,
       password,
     });
-    setLoading(submitBtn, false, "Đăng nhập");
+    setLoading(submitBtn, false);
 
     if (error) {
       showError("password", translateAuthError(error.message));
@@ -118,22 +123,22 @@ if (registerForm) {
 
     let valid = true;
     if (!fullname || fullname.length < 2) {
-      showError("fullname", "Họ tên phải có ít nhất 2 ký tự");
+      showError("fullname", t("err.fullname_min2"));
       valid = false;
     }
     if (!email) {
-      showError("email", "Vui lòng nhập email");
+      showError("email", t("err.required_email"));
       valid = false;
     } else if (!isValidEmail(email)) {
-      showError("email", "Email không hợp lệ");
+      showError("email", t("err.invalid_email"));
       valid = false;
     }
     if (!password || password.length < 6) {
-      showError("password", "Mật khẩu phải có ít nhất 6 ký tự");
+      showError("password", t("err.password_min6"));
       valid = false;
     }
     if (password !== confirmPassword) {
-      showError("confirmPassword", "Mật khẩu nhập lại không khớp");
+      showError("confirmPassword", t("err.passwords_mismatch"));
       valid = false;
     }
     if (!valid) return;
@@ -147,7 +152,7 @@ if (registerForm) {
         data: { full_name: fullname },
       },
     });
-    setLoading(submitBtn, false, "Đăng ký");
+    setLoading(submitBtn, false);
 
     if (error) {
       showError("email", translateAuthError(error.message));
@@ -156,9 +161,7 @@ if (registerForm) {
 
     // Nếu Email Confirm BẬT, user phải xác nhận email trước → chưa có session
     if (data.user && !data.session) {
-      alert(
-        "Đăng ký thành công! Vui lòng kiểm tra email để xác nhận tài khoản."
-      );
+      alert(t("msg.register_confirm_email"));
       window.location.href = "index.html";
       return;
     }
@@ -183,11 +186,11 @@ if (forgotForm) {
     clearError("email");
 
     if (!email) {
-      showError("email", "Vui lòng nhập email");
+      showError("email", t("err.required_email"));
       return;
     }
     if (!isValidEmail(email)) {
-      showError("email", "Email không hợp lệ");
+      showError("email", t("err.invalid_email"));
       return;
     }
 
@@ -197,15 +200,14 @@ if (forgotForm) {
     const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
       redirectTo: baseUrl + "reset.html",
     });
-    setLoading(submitBtn, false, "Gửi link");
+    setLoading(submitBtn, false);
 
     if (error) {
       showError("email", translateAuthError(error.message));
       return;
     }
 
-    successMsg.innerHTML =
-      "✓ Đã gửi email đặt lại mật khẩu (nếu email tồn tại trong hệ thống). Kiểm tra hộp thư.";
+    successMsg.textContent = t("msg.forgot_success");
     successMsg.classList.remove("hidden");
   });
 }
@@ -251,9 +253,7 @@ if (resetForm) {
   // Sau 5 giây nếu vẫn khoá → link hết hạn hoặc sai
   setTimeout(() => {
     if (submitBtn.disabled) {
-      showTokenError(
-        "Link đặt lại mật khẩu không hợp lệ hoặc đã hết hạn (1 giờ). Vui lòng gửi lại yêu cầu."
-      );
+      showTokenError(t("err.reset_link_invalid"));
     }
   }, 5000);
 
@@ -266,18 +266,18 @@ if (resetForm) {
 
     let valid = true;
     if (!password || password.length < 8) {
-      showError("password", "Mật khẩu phải có ít nhất 8 ký tự");
+      showError("password", t("err.password_min8"));
       valid = false;
     }
     if (password !== confirmPassword) {
-      showError("confirmPassword", "Mật khẩu nhập lại không khớp");
+      showError("confirmPassword", t("err.passwords_mismatch"));
       valid = false;
     }
     if (!valid) return;
 
     setLoading(submitBtn, true);
     const { error } = await supabaseClient.auth.updateUser({ password });
-    setLoading(submitBtn, false, "Đặt lại mật khẩu");
+    setLoading(submitBtn, false);
 
     if (error) {
       tokenErrorEl.textContent = translateAuthError(error.message);
@@ -286,7 +286,7 @@ if (resetForm) {
     }
 
     await supabaseClient.auth.signOut();
-    alert("✓ Đổi mật khẩu thành công! Vui lòng đăng nhập lại.");
+    alert(t("msg.reset_success"));
     window.location.href = "index.html";
   });
 }
@@ -381,7 +381,7 @@ if (homeRoot) {
 
     function renderPost(post) {
       const author = post.author || {};
-      const authorName = author.full_name || author.username || "Người dùng";
+      const authorName = author.full_name || author.username || t("post.unknown_user");
       const authorAvatar =
         author.avatar_url || getDefaultAvatarUrl(authorName);
       const canDelete = post.author_id === currentUserId;
@@ -399,17 +399,17 @@ if (homeRoot) {
             </div>
             ${
               canDelete
-                ? '<button class="post-more delete-btn" title="Xóa bài">⋯</button>'
+                ? `<button class="post-more delete-btn" title="${t("post.delete_title")}">⋯</button>`
                 : ""
             }
           </header>
           <div class="post-body">${escapeHtml(post.content)}</div>
           <footer class="post-footer">
             <button class="${likeClass} like-btn">
-              ${likeIcon} Thích <span class="like-count">${post.likeCount}</span>
+              ${likeIcon} ${t("post.like")} <span class="like-count">${post.likeCount}</span>
             </button>
-            <button class="post-action">💬 Bình luận</button>
-            <button class="post-action">↪ Chia sẻ</button>
+            <button class="post-action">💬 ${t("post.comment")}</button>
+            <button class="post-action">↪ ${t("post.share")}</button>
           </footer>
         </article>
       `;
@@ -431,13 +431,13 @@ if (homeRoot) {
 
       if (error) {
         console.error("[loadFeed]", error);
-        postsContainer.innerHTML = `<p style="text-align:center;color:#dc2626;padding:24px">Lỗi tải bài viết: ${error.message}</p>`;
+        postsContainer.innerHTML = `<p style="text-align:center;color:#dc2626;padding:24px">${t("err.post_load_error")}: ${error.message}</p>`;
         return;
       }
 
       if (!data || data.length === 0) {
         postsContainer.innerHTML =
-          '<p style="text-align:center;color:#6b7280;padding:24px">Chưa có bài viết nào. Hãy là người đầu tiên!</p>';
+          `<p style="text-align:center;color:#6b7280;padding:24px">${t("msg.no_posts")}</p>`;
         return;
       }
 
@@ -466,7 +466,7 @@ if (homeRoot) {
       const content = composerInput.value.trim();
       if (!content) return;
       if (content.length > 1000) {
-        alert("Bài viết tối đa 1000 ký tự");
+        alert(t("err.post_max_chars"));
         return;
       }
 
@@ -474,10 +474,10 @@ if (homeRoot) {
       const { error } = await supabaseClient
         .from("posts")
         .insert({ author_id: currentUserId, content });
-      setLoading(composerSubmit, false, "Đăng");
+      setLoading(composerSubmit, false);
 
       if (error) {
-        alert("Lỗi đăng bài: " + error.message);
+        alert(t("err.post_error") + ": " + error.message);
         return;
       }
 
@@ -521,12 +521,12 @@ if (homeRoot) {
       }
 
       if (e.target.closest(".delete-btn")) {
-        if (!confirm("Xóa bài viết này?")) return;
+        if (!confirm(t("msg.confirm_delete"))) return;
         const { error } = await supabaseClient
           .from("posts")
           .delete()
           .eq("id", postId);
-        if (error) return alert("Lỗi: " + error.message);
+        if (error) return alert(t("err.delete_error") + ": " + error.message);
         article.remove();
       }
     });
@@ -604,19 +604,19 @@ if (profileRoot) {
       if (!file) return;
 
       if (file.size > 2 * 1024 * 1024) {
-        avatarHint.textContent = "❌ Ảnh quá lớn (tối đa 2MB)";
+        avatarHint.textContent = t("profile.avatar_size_error");
         avatarHint.style.color = "var(--error)";
         avatarInput.value = "";
         return;
       }
       if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-        avatarHint.textContent = "❌ Chỉ chấp nhận JPG, PNG hoặc WebP";
+        avatarHint.textContent = t("profile.avatar_type_error");
         avatarHint.style.color = "var(--error)";
         avatarInput.value = "";
         return;
       }
 
-      avatarHint.textContent = "Đang tải ảnh lên...";
+      avatarHint.textContent = t("profile.avatar_uploading");
       avatarHint.style.color = "var(--text-light)";
 
       const ext = file.name.split(".").pop().toLowerCase();
@@ -628,7 +628,7 @@ if (profileRoot) {
 
       if (uploadError) {
         console.error(uploadError);
-        avatarHint.textContent = "❌ Tải lên thất bại: " + uploadError.message;
+        avatarHint.textContent = t("profile.avatar_upload_error") + ": " + uploadError.message;
         avatarHint.style.color = "var(--error)";
         return;
       }
@@ -644,13 +644,13 @@ if (profileRoot) {
         .eq("id", user.id);
 
       if (updateError) {
-        avatarHint.textContent = "❌ Lưu URL thất bại: " + updateError.message;
+        avatarHint.textContent = t("profile.avatar_url_error") + ": " + updateError.message;
         avatarHint.style.color = "var(--error)";
         return;
       }
 
       avatarImg.src = publicUrl;
-      avatarHint.textContent = "✓ Đã cập nhật ảnh đại diện";
+      avatarHint.textContent = t("profile.avatar_success");
       avatarHint.style.color = "var(--primary)";
     });
 
@@ -674,14 +674,11 @@ if (profileRoot) {
 
       let valid = true;
       if (!newFullName || newFullName.length < 2) {
-        showError("fullName", "Họ tên phải có ít nhất 2 ký tự");
+        showError("fullName", t("err.fullname_min2"));
         valid = false;
       }
       if (newUsername && !/^[a-z0-9_]{3,30}$/.test(newUsername)) {
-        showError(
-          "username",
-          "Username 3-30 ký tự, chỉ chữ thường, số và dấu gạch dưới"
-        );
+        showError("username", t("err.username_format"));
         valid = false;
       }
       if (!valid) return;
@@ -697,18 +694,18 @@ if (profileRoot) {
           class: newClass || null,
         })
         .eq("id", user.id);
-      setLoading(submitBtn, false, "Lưu thay đổi");
+      setLoading(submitBtn, false);
 
       if (updateError) {
         if (updateError.code === "23505") {
-          showError("username", "Username này đã có người dùng, chọn tên khác");
+          showError("username", t("err.username_taken"));
         } else {
           showFeedback("Lỗi: " + updateError.message, "error");
         }
         return;
       }
 
-      showFeedback("✓ Đã lưu thay đổi", "success");
+      showFeedback(t("msg.profile_saved"), "success");
     });
   })();
 }
