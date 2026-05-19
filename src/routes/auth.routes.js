@@ -245,4 +245,37 @@ router.post(
  */
 router.get("/me", verifyToken, authController.me);
 
+/**
+ * @openapi
+ * /api/auth/change-password:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Đổi password (khi đã login)
+ *     description: |
+ *       Yêu cầu Bearer token. Verify currentPassword bằng bcrypt, sau đó:
+ *       - Hash newPassword và lưu
+ *       - Revoke refresh token (logout mọi thiết bị)
+ *
+ *       Không có rate limit vì user đã authenticated.
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [currentPassword, newPassword]
+ *             properties:
+ *               currentPassword: { type: string, example: "oldpass123" }
+ *               newPassword: { type: string, minLength: 8, example: "newpass456" }
+ *     responses:
+ *       200: { description: Đổi password thành công }
+ *       400: { $ref: '#/components/responses/BadRequest' }
+ *       401: { $ref: '#/components/responses/Unauthorized' }
+ *       403: { $ref: '#/components/responses/Forbidden' }
+ *       404: { $ref: '#/components/responses/NotFound' }
+ */
+router.post("/change-password", verifyToken, authController.changePassword);
+
 module.exports = router;

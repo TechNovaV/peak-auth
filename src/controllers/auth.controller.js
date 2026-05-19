@@ -178,6 +178,38 @@ exports.me = async (req, res, next) => {
   }
 };
 
+exports.changePassword = async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || typeof currentPassword !== "string")
+      throw httpError(400, "Thiếu mật khẩu hiện tại");
+
+    const pwdErr = validatePassword(newPassword);
+    if (pwdErr) throw httpError(400, pwdErr);
+
+    if (currentPassword === newPassword)
+      throw httpError(400, "Mật khẩu mới phải khác mật khẩu cũ");
+
+    const user = await User.findById(req.user.sub);
+    if (!user) throw httpError(404, "Không tìm thấy người dùng");
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) throw httpError(401, "Mật khẩu hiện tại không đúng");
+
+    user.password = await bcrypt.hash(newPassword, SALT_ROUNDS);
+    user.refreshToken = null; // Revoke mọi session đang mở (như reset password)
+    await user.save();
+
+    res.json({
+      message:
+        "Đổi mật khẩu thành công. Vui lòng đăng nhập lại trên các thiết bị khác.",
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 // Message dùng chung — KHÔNG được tiết lộ user có tồn tại hay không (chống enumeration)
 const FORGOT_GENERIC_MSG =
   "Nếu tài khoản tồn tại, link đặt lại mật khẩu đã được gửi tới email.";
