@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard - Social App</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="auth-container">
+    <section class="auth-card hidden" id="dashboardRoot">
+      <header class="auth-header">
+        <h1 class="logo">SocialApp</h1>
+        <p class="subtitle">Chào mừng đến với cộng đồng</p>
+      </header>
+
+      <div class="profile-info">
+        <div class="info-row">
+          <span class="info-label">Tên:</span>
+          <span class="info-value" id="welcomeName"></span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">Email:</span>
+          <span class="info-value" id="welcomeEmail"></span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">User ID:</span>
+          <span class="info-value mono" id="welcomeId"></span>
+        </div>
+      </div>
+
+      <button type="button" id="logoutBtn" class="btn-primary">
+        Đăng xuất
+      </button>
+
+      <p class="auth-footer">
+        Bước tiếp theo: xây dựng tính năng chat
+      </p>
+    </section>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

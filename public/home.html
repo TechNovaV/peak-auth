@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SocialApp</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="app-body hidden" id="homeRoot">
+  <!-- ============ TOP NAV ============ -->
+  <header class="top-nav">
+    <div class="nav-left">
+      <a href="home.html" class="brand">SocialApp</a>
+      <div class="search-box">
+        <span class="search-icon">⌕</span>
+        <input type="text" placeholder="Tìm kiếm trên SocialApp" />
+      </div>
+    </div>
+
+    <nav class="nav-center">
+      <a href="#" class="nav-tab active" title="Trang chủ">⌂</a>
+      <a href="#" class="nav-tab" title="Bạn bè">☺</a>
+      <a href="#" class="nav-tab" title="Video">▶</a>
+      <a href="#" class="nav-tab" title="Nhóm">⚇</a>
+    </nav>
+
+    <div class="nav-right">
+      <button class="icon-btn" title="Tin nhắn">✉</button>
+      <button class="icon-btn" title="Thông báo">♪</button>
+
+      <div class="avatar-menu">
+        <button class="avatar-btn" id="avatarBtn" title="Tài khoản">
+          <img id="navAvatar" alt="avatar" />
+        </button>
+        <div class="dropdown hidden" id="avatarDropdown">
+          <div class="dropdown-header">
+            <img id="dropdownAvatar" alt="avatar" />
+            <div>
+              <div class="dd-name" id="dropdownName"></div>
+              <div class="dd-email" id="dropdownEmail"></div>
+            </div>
+          </div>
+          <hr />
+          <a href="profile.html" class="dropdown-item">
+            <span class="dd-icon">👤</span> Trang cá nhân
+          </a>
+          <a href="#" class="dropdown-item">
+            <span class="dd-icon">⚙</span> Cài đặt
+          </a>
+          <a href="#" class="dropdown-item">
+            <span class="dd-icon">?</span> Trợ giúp
+          </a>
+          <hr />
+          <button class="dropdown-item logout" id="logoutBtn">
+            <span class="dd-icon">⏻</span> Đăng xuất
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============ MAIN LAYOUT ============ -->
+  <div class="layout">
+    <!-- LEFT SIDEBAR -->
+    <aside class="sidebar sidebar-left">
+      <a href="profile.html" class="side-item">
+        <img id="sideAvatar" class="side-avatar" alt="" />
+        <span id="sideName">Bạn</span>
+      </a>
+      <a href="#" class="side-item">
+        <span class="side-icon">👥</span> Bạn bè
+      </a>
+      <a href="#" class="side-item">
+        <span class="side-icon">⚇</span> Nhóm
+      </a>
+      <a href="#" class="side-item">
+        <span class="side-icon">▶</span> Video
+      </a>
+      <a href="#" class="side-item">
+        <span class="side-icon">🛒</span> Marketplace
+      </a>
+      <a href="#" class="side-item">
+        <span class="side-icon">🕒</span> Kỷ niệm
+      </a>
+      <a href="#" class="side-item">
+        <span class="side-icon">🔖</span> Đã lưu
+      </a>
+    </aside>
+
+    <!-- FEED (CENTER) -->
+    <main class="feed">
+      <!-- Post composer -->
+      <section class="composer card">
+        <div class="composer-top">
+          <img id="composerAvatar" class="composer-avatar" alt="" />
+          <button class="composer-input" id="composerInput">
+            <span id="composerPrompt">Bạn đang nghĩ gì thế?</span>
+          </button>
+        </div>
+        <hr />
+        <div class="composer-actions">
+          <button class="composer-action">🎥 Video trực tiếp</button>
+          <button class="composer-action">🖼 Ảnh/Video</button>
+          <button class="composer-action">☺ Cảm xúc</button>
+        </div>
+      </section>
+
+      <!-- Sample posts (mock data — sẽ thay bằng DB ở Sprint sau) -->
+      <article class="post card">
+        <header class="post-header">
+          <img class="post-avatar" src="https://ui-avatars.com/api/?name=L+H&background=ec4899&color=fff&size=80" alt="" />
+          <div>
+            <div class="post-author">Lê Hương</div>
+            <div class="post-meta">2 giờ trước · Lớp 9A2</div>
+          </div>
+          <button class="post-more">⋯</button>
+        </header>
+        <div class="post-body">
+          Mai có kiểm tra Toán mà chưa ôn gì luôn 😭 ai có đề mẫu cho mình xin với!
+        </div>
+        <footer class="post-footer">
+          <button class="post-action">♡ Thích</button>
+          <button class="post-action">💬 Bình luận</button>
+          <button class="post-action">↪ Chia sẻ</button>
+        </footer>
+      </article>
+
+      <article class="post card">
+        <header class="post-header">
+          <img class="post-avatar" src="https://ui-avatars.com/api/?name=M+T&background=10b981&color=fff&size=80" alt="" />
+          <div>
+            <div class="post-author">Minh Tuấn</div>
+            <div class="post-meta">5 giờ trước · Lớp 9A2</div>
+          </div>
+          <button class="post-more">⋯</button>
+        </header>
+        <div class="post-body">
+          Lớp mình tổ chức đi chơi cuối tuần này nhé, ai đi inbox tớ 🎉
+        </div>
+        <footer class="post-footer">
+          <button class="post-action">♡ Thích</button>
+          <button class="post-action">💬 Bình luận</button>
+          <button class="post-action">↪ Chia sẻ</button>
+        </footer>
+      </article>
+
+      <article class="post card">
+        <header class="post-header">
+          <img class="post-avatar" src="https://ui-avatars.com/api/?name=A+N&background=f59e0b&color=fff&size=80" alt="" />
+          <div>
+            <div class="post-author">An Nhiên</div>
+            <div class="post-meta">Hôm qua · Lớp 9A1</div>
+          </div>
+          <button class="post-more">⋯</button>
+        </header>
+        <div class="post-body">
+          Welcome SocialApp! App của trường mình đó, ai cùng lớp kết bạn nhau nha 💜
+        </div>
+        <footer class="post-footer">
+          <button class="post-action">♡ Thích</button>
+          <button class="post-action">💬 Bình luận</button>
+          <button class="post-action">↪ Chia sẻ</button>
+        </footer>
+      </article>
+    </main>
+
+    <!-- RIGHT SIDEBAR -->
+    <aside class="sidebar sidebar-right">
+      <h3 class="side-title">Người liên hệ</h3>
+      <a href="#" class="contact-item">
+        <img src="https://ui-avatars.com/api/?name=L+H&background=ec4899&color=fff&size=64" alt="" />
+        <span>Lê Hương</span>
+        <span class="online-dot"></span>
+      </a>
+      <a href="#" class="contact-item">
+        <img src="https://ui-avatars.com/api/?name=M+T&background=10b981&color=fff&size=64" alt="" />
+        <span>Minh Tuấn</span>
+        <span class="online-dot"></span>
+      </a>
+      <a href="#" class="contact-item">
+        <img src="https://ui-avatars.com/api/?name=A+N&background=f59e0b&color=fff&size=64" alt="" />
+        <span>An Nhiên</span>
+      </a>
+      <a href="#" class="contact-item">
+        <img src="https://ui-avatars.com/api/?name=H+P&background=6366f1&color=fff&size=64" alt="" />
+        <span>Hoàng Phúc</span>
+      </a>
+      <a href="#" class="contact-item">
+        <img src="https://ui-avatars.com/api/?name=T+L&background=ef4444&color=fff&size=64" alt="" />
+        <span>Thanh Lan</span>
+      </a>
+    </aside>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Trang cá nhân - SocialApp</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="app-body hidden" id="profileRoot">
+  <!-- Mini top nav -->
+  <header class="top-nav">
+    <div class="nav-left">
+      <a href="home.html" class="brand">← SocialApp</a>
+    </div>
+    <div></div>
+    <div class="nav-right">
+      <a href="home.html" class="icon-btn" title="Về trang chủ" style="text-decoration:none;display:flex;align-items:center;justify-content:center;">⌂</a>
+    </div>
+  </header>
+
+  <main class="profile-page">
+    <section class="profile-card">
+      <h1 class="profile-title">Trang cá nhân</h1>
+      <p class="profile-sub">Quản lý ảnh đại diện và thông tin của bạn</p>
+
+      <!-- Avatar uploader -->
+      <div class="avatar-uploader">
+        <img id="profileAvatar" alt="avatar" />
+        <label class="avatar-edit-btn" for="avatarInput" title="Đổi ảnh">
+          📷
+        </label>
+        <input
+          type="file"
+          id="avatarInput"
+          accept="image/png, image/jpeg, image/webp"
+          hidden
+        />
+      </div>
+      <p class="avatar-hint" id="avatarHint">Bấm icon máy ảnh để đổi ảnh đại diện (tối đa 2MB)</p>
+
+      <!-- Profile form -->
+      <form id="profileForm" class="profile-form" novalidate>
+        <div class="field">
+          <label for="fullName">Họ và tên</label>
+          <input type="text" id="fullName" name="fullName" maxlength="80" required />
+          <small class="error" id="fullNameError"></small>
+        </div>
+
+        <div class="field">
+          <label for="username">Tên đăng nhập (username)</label>
+          <div class="input-prefix">
+            <span class="prefix-text">@</span>
+            <input
+              type="text"
+              id="username"
+              name="username"
+              maxlength="30"
+              pattern="[a-z0-9_]+"
+              placeholder="vd: thien_2k10"
+              autocomplete="off"
+            />
+          </div>
+          <small class="error" id="usernameError"></small>
+          <small class="hint">Chỉ chữ thường, số và dấu gạch dưới. Bạn bè sẽ tìm bạn qua tên này.</small>
+        </div>
+
+        <div class="field">
+          <label for="bio">Giới thiệu</label>
+          <textarea
+            id="bio"
+            name="bio"
+            maxlength="200"
+            rows="3"
+            placeholder="Vài dòng về bạn..."
+          ></textarea>
+          <small class="hint"><span id="bioCount">0</span>/200 ký tự</small>
+        </div>
+
+        <div class="field-grid">
+          <div class="field">
+            <label for="school">Trường</label>
+            <input type="text" id="school" name="school" maxlength="100" placeholder="THCS Nguyễn Huệ" />
+          </div>
+          <div class="field">
+            <label for="class">Lớp</label>
+            <input type="text" id="class" name="class" maxlength="20" placeholder="9A2" />
+          </div>
+        </div>
+
+        <div class="form-feedback" id="formFeedback"></div>
+
+        <div class="form-actions">
+          <a href="home.html" class="btn-secondary">Hủy</a>
+          <button type="submit" class="btn-primary">Lưu thay đổi</button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

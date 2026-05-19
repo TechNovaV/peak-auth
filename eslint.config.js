@@ -24,12 +24,12 @@ module.exports = [
       ],
       "no-var": "error",
       "prefer-const": "warn",
-      "no-console": "off", // server log cần console
+      "no-console": "off",
       eqeqeq: ["warn", "always"],
     },
   },
 
-  // Test files: thêm Jest globals (describe, it, expect, beforeAll, ...)
+  // Test files: thêm Jest globals
   {
     files: ["tests/**/*.js"],
     languageOptions: {
@@ -37,6 +37,23 @@ module.exports = [
         ...globals.node,
         ...globals.jest,
       },
+    },
+  },
+
+  // Frontend (public/): browser globals (document, window, fetch, localStorage, ...)
+  // Dùng script tags không phải ES modules — config.js define `auth` global,
+  // script.js sử dụng. ESLint không track cross-file globals tốt → tắt no-undef.
+  {
+    files: ["public/**/*.js"],
+    languageOptions: {
+      sourceType: "script",
+      globals: {
+        ...globals.browser,
+      },
+    },
+    rules: {
+      "no-undef": "off",
+      "no-unused-vars": "off",
     },
   },
 ];

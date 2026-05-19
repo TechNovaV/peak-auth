@@ -59,7 +59,15 @@ cp .env.example .env
 npm run dev
 ```
 
-Server runs at `http://localhost:3000`. Open `http://localhost:3000/api-docs` for interactive API documentation.
+Server runs at `http://localhost:3000`. Three entry points:
+
+| URL                              | What                                                                           |
+| -------------------------------- | ------------------------------------------------------------------------------ |
+| `http://localhost:3000/`         | **Frontend** — login/register/home/profile (SocialApp UI, vanilla HTML/CSS/JS) |
+| `http://localhost:3000/api-docs` | **Swagger UI** — interactive API docs with Try-it-out                          |
+| `http://localhost:3000/api/*`    | **REST API** — auth/admin endpoints                                            |
+
+> Frontend được serve từ folder `public/` qua `express.static` middleware. Cùng origin với API nên không cần CORS hay 2 terminal — chỉ `npm run dev` là xong.
 
 ### Generate secure JWT secrets
 
@@ -134,11 +142,25 @@ Tests use [`mongodb-memory-server`](https://github.com/typegoose/mongodb-memory-
 ```
 peak-auth/
 ├── .github/
-│   ├── workflows/ci.yml          GitHub Actions CI (Node 20 + 22 matrix)
+│   ├── workflows/
+│   │   ├── ci.yml                GitHub Actions CI (Node 20 + 22 matrix)
+│   │   └── deploy-docs.yml       Deploy Redoc to GitHub Pages on push
 │   └── pull_request_template.md  PR template with checklist
 ├── .husky/
 │   ├── pre-commit                Runs lint-staged on staged files
 │   └── pre-push                  Runs full test suite
+├── public/                       Frontend (vanilla HTML/CSS/JS)
+│   ├── index.html                Login page
+│   ├── register.html             Register page
+│   ├── home.html                 Home (protected)
+│   ├── profile.html              Profile editor (protected)
+│   ├── config.js                 API client + auth helpers
+│   ├── script.js                 Page logic
+│   └── style.css                 Styles
+├── docs/                         GitHub Pages content (Redoc UI)
+│   └── index.html
+├── scripts/
+│   └── build-docs.js             Generate docs/openapi.json
 ├── src/
 │   ├── server.js                 Entry point (loads env, connects DB, listens)
 │   ├── app.js                    Express app config (middleware, routes, errors)
