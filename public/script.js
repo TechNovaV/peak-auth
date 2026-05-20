@@ -423,6 +423,56 @@ if (homeRoot) {
     // ============== POSTS FEATURE ==============
     const postsContainer = document.getElementById("postsContainer");
     const currentUserId = user.id;
+    const postCommentCache = {};
+
+    function openLightbox(src) {
+      const overlay = document.createElement("div");
+      overlay.className = "img-lightbox";
+      const img = document.createElement("img");
+      img.src = src;
+      overlay.appendChild(img);
+      overlay.addEventListener("click", () => overlay.remove());
+      const onEsc = (ev) => {
+        if (ev.key === "Escape") {
+          overlay.remove();
+          document.removeEventListener("keydown", onEsc);
+        }
+      };
+      document.addEventListener("keydown", onEsc);
+      document.body.appendChild(overlay);
+    }
+
+    function renderComment(c) {
+      const author = c.author || {};
+      const name = author.full_name || author.username || t("post.unknown_user");
+      const avatar = author.avatar_url || getDefaultAvatarUrl(name);
+      return (
+        '<div class="comment-item">' +
+          '<img class="comment-avatar" src="' + escapeHtml(avatar) + '" alt="" />' +
+          '<div class="comment-bubble">' +
+            '<div class="comment-author">' + escapeHtml(name) + "</div>" +
+            '<div class="comment-text">' + escapeHtml(c.content) + "</div>" +
+          "</div>" +
+        "</div>"
+      );
+    }
+
+    function renderCommentsPreview(postId) {
+      const arr = postCommentCache[postId] || [];
+      const count = arr.length;
+      if (count === 0) return "";
+      const latest = arr[count - 1];
+      const viewAll = count > 1
+        ? '<button class="view-comments-btn" data-id="' + postId + '">' +
+            t("post.view_all") + " " + count + " " + t("post.comments_word") + "</button>"
+        : "";
+      return viewAll + renderComment(latest);
+    }
+
+    function renderAllComments(postId) {
+      const arr = postCommentCache[postId] || [];
+      return arr.map(renderComment).join("");
+    }
 
     function renderPost(post) {
       const author = post.author || {};
@@ -455,10 +505,17 @@ if (homeRoot) {
             </div>
             <div class="post-actions">
               <button class="${likeClass}">${likeIcon} ${t("post.like")}</button>
-              <button class="post-btn">💬 ${t("post.comment")}</button>
-              <button class="post-btn">↗ ${t("post.share")}</button>
+              <button class="post-btn comment-btn">💬 ${t("post.comment")}</button>
+              <button class="post-btn share-btn">↗ ${t("post.share")}</button>
             </div>
           </footer>
+          <div class="post-comments" data-post="${post.id}">
+            <div class="comments-preview">${renderCommentsPreview(post.id)}</div>
+            <div class="comment-input-row">
+              <img src="${escapeHtml(avatarUrl)}" alt="" />
+              <input class="comment-input" type="text" maxlength="500" data-id="${post.id}" placeholder="${t("post.comment_placeholder")}" />
+            </div>
+          </div>
         </article>
       `;
     }
@@ -492,7 +549,35 @@ if (homeRoot) {
         ...p,
         likeCount: (p.likes || []).length,
         likedByMe: (p.likes || []).some((l) => l.user_id === currentUserId),
+        comments: [],
       }));
+
+      // Lấy bình luận riêng để feed vẫn tải được kể cả khi bảng comments
+      // chưa tồn tại. Profile tác giả lấy ở bước 2 để không phụ thuộc tên FK.
+      const postIds = enriched.map((p) => p.id);
+      const { data: comments, error: cErr } = await supabaseClient
+        .from("comments")
+        .select("id, content, created_at, post_id, user_id")
+        .in("post_id", postIds)
+        .order("created_at", { ascending: true });
+
+      if (!cErr && comments && comments.length) {
+        const userIds = [...new Set(comments.map((c) => c.user_id))];
+        const { data: profs } = await supabaseClient
+          .from("profiles")
+          .select("id, full_name, username, avatar_url")
+          .in("id", userIds);
+        const profById = {};
+        (profs || []).forEach((p) => { profById[p.id] = p; });
+        const byPost = {};
+        comments.forEach((c) => {
+          c.author = profById[c.user_id] || {};
+          (byPost[c.post_id] = byPost[c.post_id] || []).push(c);
+        });
+        enriched.forEach((p) => { p.comments = byPost[p.id] || []; });
+      }
+
+      enriched.forEach((p) => { postCommentCache[p.id] = p.comments.slice(); });
 
       postsContainer.innerHTML = enriched.map(renderPost).join("");
     }
@@ -580,11 +665,32 @@ if (homeRoot) {
       loadFeed();
     });
 
-    // Event delegation cho like / delete
+    // Event delegation cho like / delete / comment / xem ảnh
     postsContainer?.addEventListener("click", async (e) => {
+      // Mở ảnh full màn hình
+      const imgEl = e.target.closest(".post-image");
+      if (imgEl) {
+        openLightbox(imgEl.src);
+        return;
+      }
+
       const article = e.target.closest("article.post-card");
       if (!article) return;
       const postId = article.dataset.id;
+
+      // Xem tất cả bình luận
+      if (e.target.closest(".view-comments-btn")) {
+        const preview = article.querySelector(".comments-preview");
+        if (preview) preview.innerHTML = renderAllComments(postId);
+        return;
+      }
+
+      // Bấm "Bình luận" → focus ô nhập
+      if (e.target.closest(".comment-btn")) {
+        const input = article.querySelector(".comment-input");
+        if (input) input.focus();
+        return;
+      }
 
       if (e.target.closest(".like-btn")) {
         const btn = e.target.closest(".like-btn");
@@ -623,6 +729,46 @@ if (homeRoot) {
         if (error) return alert(t("err.delete_error") + ": " + error.message);
         article.remove();
       }
+    });
+
+    // Gửi bình luận bằng phím Enter
+    postsContainer?.addEventListener("keydown", async (e) => {
+      const input = e.target.closest(".comment-input");
+      if (!input || e.key !== "Enter" || e.shiftKey) return;
+      e.preventDefault();
+      const content = input.value.trim();
+      if (!content) return;
+      const postId = input.dataset.id;
+      input.value = "";
+      input.disabled = true;
+
+      const { data: inserted, error } = await supabaseClient
+        .from("comments")
+        .insert({ post_id: postId, user_id: currentUserId, content })
+        .select()
+        .single();
+
+      input.disabled = false;
+      input.focus();
+
+      if (error) {
+        console.error("[comment]", error);
+        alert(t("err.comment_error") + ": " + error.message);
+        return;
+      }
+
+      const newComment = {
+        id: inserted.id,
+        content: inserted.content,
+        created_at: inserted.created_at,
+        user_id: currentUserId,
+        author: { full_name: fullName, username: null, avatar_url: avatarUrl },
+      };
+      (postCommentCache[postId] = postCommentCache[postId] || []).push(newComment);
+
+      const article = input.closest("article.post-card");
+      const preview = article && article.querySelector(".comments-preview");
+      if (preview) preview.innerHTML = renderCommentsPreview(postId);
     });
 
     loadFeed();
