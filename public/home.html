@@ -104,6 +104,17 @@
               rows="2"
             ></textarea>
           </div>
+          <div class="composer-img-preview hidden" id="composerImgPreview">
+            <img id="composerPreviewImg" src="" alt="preview" />
+            <button type="button" id="composerRemoveImg" class="composer-preview-remove" title="Xóa ảnh">✕</button>
+          </div>
+          <div class="composer-toolbar">
+            <label class="composer-tool-btn" title="Thêm ảnh / video">
+              <svg viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+              <span>Ảnh / Video</span>
+              <input type="file" id="composerImgInput" accept="image/*" style="display:none" />
+            </label>
+          </div>
           <div class="composer-footer">
             <span id="composerCharCount" class="char-count">0 / 1000</span>
             <button type="submit" class="btn-post" id="composerSubmit" data-i18n="home.composer.post">Đăng</button>
@@ -124,6 +135,9 @@
     </aside>
 
   </div>
+
+  <!-- Chat boxes container -->
+  <div class="chat-stack" id="chatStack"></div>
 
   <script src="translations.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
