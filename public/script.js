@@ -375,6 +375,51 @@ if (homeRoot) {
         window.location.href = "index.html";
       });
 
+    // ============== SIDEBAR TOGGLES (responsive) ==============
+    const sidebarLeft = homeRoot.querySelector(".sidebar-left");
+    const sidebarRight = homeRoot.querySelector(".sidebar-right");
+    const sidebarBackdrop = document.getElementById("sidebarBackdrop");
+
+    function openSidebar(which) {
+      sidebarLeft.classList.remove("open");
+      sidebarRight.classList.remove("open");
+      if (which === "left") sidebarLeft.classList.add("open");
+      else sidebarRight.classList.add("open");
+      sidebarBackdrop.classList.add("active");
+    }
+
+    function closeAllSidebars() {
+      sidebarLeft.classList.remove("open");
+      sidebarRight.classList.remove("open");
+      sidebarBackdrop.classList.remove("active");
+    }
+
+    document.getElementById("leftSidebarToggle")?.addEventListener("click", () => {
+      sidebarLeft.classList.contains("open") ? closeAllSidebars() : openSidebar("left");
+    });
+
+    document.getElementById("rightSidebarToggle")?.addEventListener("click", () => {
+      sidebarRight.classList.contains("open") ? closeAllSidebars() : openSidebar("right");
+    });
+
+    sidebarBackdrop?.addEventListener("click", closeAllSidebars);
+
+    let _txStart = 0, _tyStart = 0;
+    document.addEventListener("touchstart", (e) => {
+      _txStart = e.touches[0].clientX;
+      _tyStart = e.touches[0].clientY;
+    }, { passive: true });
+
+    document.addEventListener("touchend", (e) => {
+      const dx = e.changedTouches[0].clientX - _txStart;
+      const dy = e.changedTouches[0].clientY - _tyStart;
+      if (Math.abs(dy) > Math.abs(dx) || Math.abs(dx) < 40) return;
+      if (dx > 60 && _txStart < 32) openSidebar("left");
+      else if (dx < -60 && _txStart > window.innerWidth - 32) openSidebar("right");
+      else if (dx < -60 && sidebarLeft.classList.contains("open")) closeAllSidebars();
+      else if (dx > 60 && sidebarRight.classList.contains("open")) closeAllSidebars();
+    }, { passive: true });
+
     // ============== POSTS FEATURE ==============
     const postsContainer = document.getElementById("postsContainer");
     const currentUserId = user.id;
@@ -584,6 +629,7 @@ if (homeRoot) {
 
     // ============== CHAT — định nghĩa TRƯỚC khi load friends ==============
     const openChats = {};
+    const chatCallbacks = {};
     let globalIncomingSub = null;
 
     function renderChatMsg(msg) {
@@ -593,27 +639,6 @@ if (homeRoot) {
         ? `<img src="${escapeHtml(msg.image_url)}" alt="" style="cursor:pointer" onclick="window.open(this.src)" />`
         : "";
       return `<div class="chat-msg ${isMine ? "mine" : "theirs"}">${contentHtml}${imageHtml}</div>`;
-    }
-
-    async function loadChatMessages(uid) {
-      const msgsEl = document.getElementById("chatMsgs-" + uid);
-      if (!msgsEl) return;
-      const { data, error } = await supabaseClient
-        .from("messages")
-        .select("*")
-        .or("and(sender_id.eq." + currentUserId + ",receiver_id.eq." + uid + "),and(sender_id.eq." + uid + ",receiver_id.eq." + currentUserId + ")")
-        .order("created_at", { ascending: true })
-        .limit(50);
-      if (error) {
-        msgsEl.innerHTML = "<p class=\"chat-loading\">Không thể tải tin nhắn: " + error.message + "</p>";
-        return;
-      }
-      if (!data || data.length === 0) {
-        msgsEl.innerHTML = "<p class=\"chat-loading\">Hãy bắt đầu cuộc trò chuyện! 👋</p>";
-      } else {
-        msgsEl.innerHTML = data.map(renderChatMsg).join("");
-        msgsEl.scrollTop = msgsEl.scrollHeight;
-      }
     }
 
     function subscribeIncoming() {
@@ -627,12 +652,7 @@ if (homeRoot) {
           filter: "receiver_id=eq." + currentUserId
         }, (payload) => {
           const msg = payload.new;
-          const msgsEl = document.getElementById("chatMsgs-" + msg.sender_id);
-          if (!msgsEl) return;
-          const loading = msgsEl.querySelector(".chat-loading");
-          if (loading) loading.remove();
-          msgsEl.insertAdjacentHTML("beforeend", renderChatMsg(msg));
-          msgsEl.scrollTop = msgsEl.scrollHeight;
+          if (chatCallbacks[msg.sender_id]) chatCallbacks[msg.sender_id](msg);
         })
         .subscribe();
     }
@@ -701,16 +721,72 @@ if (homeRoot) {
       chatStack.appendChild(box);
       openChats[uid] = box;
 
+      // Per-chat dedup tracking
+      const renderedIds = new Set();
+      let latestMsgTime = null;
+
+      function appendMsg(msg) {
+        if (renderedIds.has(msg.id)) return;
+        renderedIds.add(msg.id);
+        if (!latestMsgTime || msg.created_at > latestMsgTime) latestMsgTime = msg.created_at;
+        const loading = msgsEl.querySelector(".chat-loading");
+        if (loading) loading.remove();
+        msgsEl.insertAdjacentHTML("beforeend", renderChatMsg(msg));
+        msgsEl.scrollTop = msgsEl.scrollHeight;
+      }
+
+      // Register Realtime callback for incoming messages
+      chatCallbacks[uid] = appendMsg;
+
+      async function loadInitialMessages() {
+        const { data, error } = await supabaseClient
+          .from("messages")
+          .select("*")
+          .or("and(sender_id.eq." + currentUserId + ",receiver_id.eq." + uid + "),and(sender_id.eq." + uid + ",receiver_id.eq." + currentUserId + ")")
+          .order("created_at", { ascending: true })
+          .limit(50);
+        if (error) {
+          msgsEl.innerHTML = "<p class=\"chat-loading\">Không thể tải: " + error.message + "</p>";
+          return;
+        }
+        if (!data || data.length === 0) {
+          msgsEl.innerHTML = "<p class=\"chat-loading\">Hãy bắt đầu cuộc trò chuyện! 👋</p>";
+        } else {
+          msgsEl.innerHTML = "";
+          data.forEach((msg) => {
+            renderedIds.add(msg.id);
+            msgsEl.insertAdjacentHTML("beforeend", renderChatMsg(msg));
+          });
+          msgsEl.scrollTop = msgsEl.scrollHeight;
+          latestMsgTime = data[data.length - 1].created_at;
+        }
+      }
+
+      // Poll every 3s as fallback when Realtime is unavailable
+      const pollInterval = setInterval(async () => {
+        if (!latestMsgTime) return;
+        const { data } = await supabaseClient
+          .from("messages")
+          .select("*")
+          .or("and(sender_id.eq." + currentUserId + ",receiver_id.eq." + uid + "),and(sender_id.eq." + uid + ",receiver_id.eq." + currentUserId + ")")
+          .gt("created_at", latestMsgTime)
+          .order("created_at", { ascending: true });
+        if (data && data.length > 0) data.forEach(appendMsg);
+      }, 3000);
+
       header.addEventListener("click", (e) => {
         if (e.target.closest(".chat-header-btn")) return;
         box.classList.toggle("minimized");
       });
+
       header.querySelectorAll(".chat-header-btn").forEach((btn) => {
         btn.addEventListener("click", (e) => {
           e.stopPropagation();
           if (btn.dataset.action === "minimize") {
             box.classList.toggle("minimized");
           } else {
+            clearInterval(pollInterval);
+            delete chatCallbacks[uid];
             box.remove();
             delete openChats[uid];
           }
@@ -719,19 +795,18 @@ if (homeRoot) {
 
       async function doSend(content, imageUrl) {
         if (!content && !imageUrl) return;
-        const loading = msgsEl.querySelector(".chat-loading");
-        if (loading) loading.remove();
-        msgsEl.insertAdjacentHTML("beforeend", renderChatMsg({
-          sender_id: currentUserId, receiver_id: uid, content, image_url: imageUrl
-        }));
-        msgsEl.scrollTop = msgsEl.scrollHeight;
-        const { error } = await supabaseClient.from("messages").insert({
-          sender_id: currentUserId,
-          receiver_id: uid,
-          content: content || null,
-          image_url: imageUrl || null
-        });
-        if (error) console.error("[chat send]", error);
+        const { data: inserted, error } = await supabaseClient
+          .from("messages")
+          .insert({
+            sender_id: currentUserId,
+            receiver_id: uid,
+            content: content || null,
+            image_url: imageUrl || null
+          })
+          .select()
+          .single();
+        if (error) { console.error("[chat send]", error); return; }
+        if (inserted) appendMsg(inserted);
       }
 
       sendBtn.addEventListener("click", async () => {
@@ -765,7 +840,7 @@ if (homeRoot) {
         e.target.value = "";
       });
 
-      loadChatMessages(uid);
+      loadInitialMessages();
       subscribeIncoming();
     }
 

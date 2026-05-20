@@ -994,6 +994,24 @@ body {
   padding: 11px 24px;
 }
 
+/* ===== SIDEBAR TOGGLE BUTTONS (hidden on large screens) ===== */
+.sidebar-toggle-btn {
+  display: none !important;
+}
+
+/* ===== SIDEBAR BACKDROP ===== */
+.sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 390;
+}
+
+.sidebar-backdrop.active {
+  display: block;
+}
+
 /* ============================================================
    RESPONSIVE
    ============================================================ */
@@ -1001,9 +1019,40 @@ body {
   .layout {
     grid-template-columns: 1fr;
   }
-  .sidebar-left,
+
+  .sidebar-toggle-btn {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    width: 280px;
+    background: #fff;
+    z-index: 400;
+    overflow-y: auto;
+    padding: 74px 0 20px;
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .sidebar-left {
+    left: 0;
+    transform: translateX(-100%);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.18);
+  }
+
   .sidebar-right {
-    display: none;
+    right: 0;
+    transform: translateX(100%);
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.18);
+  }
+
+  .sidebar-left.open,
+  .sidebar-right.open {
+    transform: translateX(0);
   }
 }
 
