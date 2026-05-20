@@ -650,9 +650,26 @@ if (homeRoot) {
           schema: "public",
           table: "messages",
           filter: "receiver_id=eq." + currentUserId
-        }, (payload) => {
+        }, async (payload) => {
           const msg = payload.new;
-          if (chatCallbacks[msg.sender_id]) chatCallbacks[msg.sender_id](msg);
+          if (chatCallbacks[msg.sender_id]) {
+            // Chat is open — unminimize if needed then append
+            if (openChats[msg.sender_id]) {
+              openChats[msg.sender_id].classList.remove("minimized");
+            }
+            chatCallbacks[msg.sender_id](msg);
+          } else {
+            // Auto-open chat box for this sender
+            const { data: senderProfile } = await supabaseClient
+              .from("profiles")
+              .select("id, full_name, username, avatar_url")
+              .eq("id", msg.sender_id)
+              .single();
+            const senderName = senderProfile?.full_name || senderProfile?.username || "Người dùng";
+            const senderAvatar = senderProfile?.avatar_url || getDefaultAvatarUrl(senderName);
+            openChat(msg.sender_id, senderName, senderAvatar);
+            // loadInitialMessages inside openChat will fetch this message from DB
+          }
         })
         .subscribe();
     }
