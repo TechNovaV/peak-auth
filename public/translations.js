@@ -132,6 +132,19 @@ const PEAK_I18N = {
     "time.hours_ago": " giờ trước",
     "time.days_ago": " ngày trước",
 
+    // Notifications
+    "notif.title": "Thông báo",
+    "notif.empty": "Chưa có thông báo nào",
+    "notif.clear_all": "Xóa tất cả",
+    "notif.enable_push": "🔔 Bật thông báo điện thoại",
+    "notif.push_enabled": "✓ Đã bật thông báo",
+    "notif.push_denied": "Thông báo bị chặn trong cài đặt trình duyệt",
+    "notif.new_message": "Tin nhắn mới",
+    "notif.liked_your_post": "đã thích bài viết của bạn",
+    "notif.commented": "đã bình luận",
+    "notif.sent_photo": "đã gửi một ảnh",
+    "notif.new_post": "vừa đăng bài mới",
+
     // Profile page feedback
     "profile.avatar_size_error": "❌ Ảnh quá lớn (tối đa 2MB)",
     "profile.avatar_type_error": "❌ Chỉ chấp nhận JPG, PNG hoặc WebP",
@@ -269,6 +282,19 @@ const PEAK_I18N = {
     "time.minutes_ago": " minutes ago",
     "time.hours_ago": " hours ago",
     "time.days_ago": " days ago",
+
+    // Notifications
+    "notif.title": "Notifications",
+    "notif.empty": "No notifications yet",
+    "notif.clear_all": "Clear all",
+    "notif.enable_push": "🔔 Enable phone notifications",
+    "notif.push_enabled": "✓ Notifications enabled",
+    "notif.push_denied": "Notifications blocked in browser settings",
+    "notif.new_message": "New message",
+    "notif.liked_your_post": "liked your post",
+    "notif.commented": "commented",
+    "notif.sent_photo": "sent a photo",
+    "notif.new_post": "just posted",
 
     // Profile page feedback
     "profile.avatar_size_error": "❌ File too large (max 2MB)",
