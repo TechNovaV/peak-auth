@@ -121,6 +121,10 @@ const PEAK_I18N = {
     "post.share": "Chia sẻ",
     "post.delete_title": "Xóa bài",
     "post.unknown_user": "Người dùng",
+    "post.comment_placeholder": "Viết bình luận...",
+    "post.view_all": "Xem tất cả",
+    "post.comments_word": "bình luận",
+    "err.comment_error": "Lỗi gửi bình luận",
 
     // Time ago
     "time.just_now": "vừa xong",
@@ -255,6 +259,10 @@ const PEAK_I18N = {
     "post.share": "Share",
     "post.delete_title": "Delete post",
     "post.unknown_user": "User",
+    "post.comment_placeholder": "Write a comment...",
+    "post.view_all": "View all",
+    "post.comments_word": "comments",
+    "err.comment_error": "Error posting comment",
 
     // Time ago
     "time.just_now": "just now",
