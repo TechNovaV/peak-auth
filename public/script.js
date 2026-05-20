@@ -467,26 +467,29 @@ if (homeRoot) {
       composerCharCount.textContent = composerInput.value.length + " / 1000";
     });
 
-    // Image selection — show preview and upload immediately
+    // Image selection — show preview then upload
     composerImgInput?.addEventListener("change", async (e) => {
-      const file = e.target.files?.[0];
+      const file = e.target.files && e.target.files[0];
       if (!file) return;
       if (file.size > 5 * 1024 * 1024) {
         alert("Ảnh quá lớn! Tối đa 5MB");
         composerImgInput.value = "";
         return;
       }
+      // Show local preview immediately
       composerPreviewImg.src = URL.createObjectURL(file);
       composerImgPreview.classList.remove("hidden");
       composerImageUrl = null;
 
-      const ext = file.name.split(".").pop().toLowerCase();
-      const path = `posts/${currentUserId}/${Date.now()}.${ext}`;
+      const ext = file.name.split(".").pop().toLowerCase() || "jpg";
+      const path = "posts/" + currentUserId + "/" + Date.now() + "." + ext;
+
       const { error: upErr } = await supabaseClient.storage
         .from("post-images")
-        .upload(path, file, { contentType: file.type });
+        .upload(path, file, { upsert: false, contentType: file.type });
+
       if (upErr) {
-        alert("Lỗi upload ảnh: " + upErr.message);
+        alert("Lỗi upload ảnh: " + upErr.message + "\n\nHãy kiểm tra bucket 'post-images' đã được tạo và có policy cho phép upload.");
         composerImgPreview.classList.add("hidden");
         composerImgInput.value = "";
         return;
@@ -579,46 +582,7 @@ if (homeRoot) {
 
     loadFeed();
 
-    // Load friends sidebar
-    const friendsList = document.getElementById("friendsList");
-    if (friendsList) {
-      const { data: friends } = await supabaseClient
-        .from("profiles")
-        .select("id, full_name, username, avatar_url")
-        .neq("id", currentUserId)
-        .limit(10);
-
-      if (!friends || friends.length === 0) {
-        friendsList.innerHTML = `<p class="friends-empty">Chưa có bạn bè nào.<br/>Tính năng kết bạn sắp ra mắt!</p>`;
-      } else {
-        friendsList.innerHTML = friends.map((f) => {
-          const name = f.full_name || f.username || t("post.unknown_user");
-          const avatar = f.avatar_url || getDefaultAvatarUrl(name);
-          return `<a href="#" class="friend-item"
-            data-uid="${escapeHtml(f.id)}"
-            data-name="${escapeHtml(name)}"
-            data-avatar="${escapeHtml(avatar)}">
-            <img src="${escapeHtml(avatar)}" alt="" />
-            <span>${escapeHtml(name)}</span>
-          </a>`;
-        }).join("");
-      }
-
-      friendsList.addEventListener("click", (e) => {
-        const item = e.target.closest(".friend-item[data-uid]");
-        if (!item) return;
-        e.preventDefault();
-        openChat(item.dataset.uid, item.dataset.name, item.dataset.avatar);
-      });
-    }
-
-    // Locket tab placeholder
-    document.getElementById("locketTab")?.addEventListener("click", (e) => {
-      e.preventDefault();
-      alert("Locket – Tính năng sắp ra mắt! 📸");
-    });
-
-    // ============== CHAT ==============
+    // ============== CHAT — định nghĩa TRƯỚC khi load friends ==============
     const openChats = {};
     let globalIncomingSub = null;
 
@@ -626,26 +590,26 @@ if (homeRoot) {
       const isMine = msg.sender_id === currentUserId;
       const contentHtml = msg.content ? `<span>${escapeHtml(msg.content)}</span>` : "";
       const imageHtml = msg.image_url
-        ? `<img src="${escapeHtml(msg.image_url)}" alt="" onclick="window.open(this.src)" />`
+        ? `<img src="${escapeHtml(msg.image_url)}" alt="" style="cursor:pointer" onclick="window.open(this.src)" />`
         : "";
       return `<div class="chat-msg ${isMine ? "mine" : "theirs"}">${contentHtml}${imageHtml}</div>`;
     }
 
     async function loadChatMessages(uid) {
-      const msgsEl = document.getElementById(`chatMsgs-${uid}`);
+      const msgsEl = document.getElementById("chatMsgs-" + uid);
       if (!msgsEl) return;
       const { data, error } = await supabaseClient
         .from("messages")
         .select("*")
-        .or(`and(sender_id.eq.${currentUserId},receiver_id.eq.${uid}),and(sender_id.eq.${uid},receiver_id.eq.${currentUserId})`)
+        .or("and(sender_id.eq." + currentUserId + ",receiver_id.eq." + uid + "),and(sender_id.eq." + uid + ",receiver_id.eq." + currentUserId + ")")
         .order("created_at", { ascending: true })
         .limit(50);
       if (error) {
-        msgsEl.innerHTML = `<p class="chat-loading">Không thể tải tin nhắn</p>`;
+        msgsEl.innerHTML = "<p class=\"chat-loading\">Không thể tải tin nhắn: " + error.message + "</p>";
         return;
       }
       if (!data || data.length === 0) {
-        msgsEl.innerHTML = `<p class="chat-loading">Hãy bắt đầu cuộc trò chuyện! 👋</p>`;
+        msgsEl.innerHTML = "<p class=\"chat-loading\">Hãy bắt đầu cuộc trò chuyện! 👋</p>";
       } else {
         msgsEl.innerHTML = data.map(renderChatMsg).join("");
         msgsEl.scrollTop = msgsEl.scrollHeight;
@@ -660,10 +624,10 @@ if (homeRoot) {
           event: "INSERT",
           schema: "public",
           table: "messages",
-          filter: `receiver_id=eq.${currentUserId}`
+          filter: "receiver_id=eq." + currentUserId
         }, (payload) => {
           const msg = payload.new;
-          const msgsEl = document.getElementById(`chatMsgs-${msg.sender_id}`);
+          const msgsEl = document.getElementById("chatMsgs-" + msg.sender_id);
           if (!msgsEl) return;
           const loading = msgsEl.querySelector(".chat-loading");
           if (loading) loading.remove();
@@ -679,37 +643,69 @@ if (homeRoot) {
         return;
       }
       const chatStack = document.getElementById("chatStack");
+      if (!chatStack) { console.error("chatStack element not found"); return; }
+
       const box = document.createElement("div");
       box.className = "chat-box";
-      box.innerHTML = `
-        <div class="chat-header">
-          <img src="${escapeHtml(avatar)}" alt="" />
-          <span class="chat-header-name">${escapeHtml(name)}</span>
-          <div class="chat-header-actions">
-            <button class="chat-header-btn" data-action="minimize" title="Thu nhỏ">—</button>
-            <button class="chat-header-btn" data-action="close" title="Đóng">✕</button>
-          </div>
-        </div>
-        <div class="chat-messages" id="chatMsgs-${uid}">
-          <p class="chat-loading">Đang tải...</p>
-        </div>
-        <div class="chat-input-area">
-          <label class="chat-action-btn img-btn" title="Gửi ảnh" style="cursor:pointer">
-            🖼
-            <input type="file" accept="image/*" class="chat-img-file" style="display:none" />
-          </label>
-          <input type="text" class="chat-text-input" placeholder="Nhắn tin..." />
-          <button class="chat-action-btn send" title="Gửi">➤</button>
-        </div>
-      `;
+
+      const safeAvatar = avatar || "";
+      const safeName = name || "Người dùng";
+
+      const header = document.createElement("div");
+      header.className = "chat-header";
+      header.innerHTML =
+        "<img src=\"" + safeAvatar + "\" alt=\"\" />" +
+        "<span class=\"chat-header-name\">" + escapeHtml(safeName) + "</span>" +
+        "<div class=\"chat-header-actions\">" +
+          "<button class=\"chat-header-btn\" data-action=\"minimize\" title=\"Thu nhỏ\">—</button>" +
+          "<button class=\"chat-header-btn\" data-action=\"close\" title=\"Đóng\">✕</button>" +
+        "</div>";
+
+      const msgsEl = document.createElement("div");
+      msgsEl.className = "chat-messages";
+      msgsEl.id = "chatMsgs-" + uid;
+      msgsEl.innerHTML = "<p class=\"chat-loading\">Đang tải...</p>";
+
+      const inputArea = document.createElement("div");
+      inputArea.className = "chat-input-area";
+
+      const imgLabel = document.createElement("label");
+      imgLabel.className = "chat-action-btn img-btn";
+      imgLabel.title = "Gửi ảnh";
+      imgLabel.style.cursor = "pointer";
+      imgLabel.textContent = "🖼";
+      const imgFileInput = document.createElement("input");
+      imgFileInput.type = "file";
+      imgFileInput.accept = "image/*";
+      imgFileInput.style.display = "none";
+      imgLabel.appendChild(imgFileInput);
+
+      const textInput = document.createElement("input");
+      textInput.type = "text";
+      textInput.className = "chat-text-input";
+      textInput.placeholder = "Nhắn tin...";
+
+      const sendBtn = document.createElement("button");
+      sendBtn.className = "chat-action-btn send";
+      sendBtn.title = "Gửi";
+      sendBtn.textContent = "➤";
+
+      inputArea.appendChild(imgLabel);
+      inputArea.appendChild(textInput);
+      inputArea.appendChild(sendBtn);
+
+      box.appendChild(header);
+      box.appendChild(msgsEl);
+      box.appendChild(inputArea);
+
       chatStack.appendChild(box);
       openChats[uid] = box;
 
-      box.querySelector(".chat-header").addEventListener("click", (e) => {
+      header.addEventListener("click", (e) => {
         if (e.target.closest(".chat-header-btn")) return;
         box.classList.toggle("minimized");
       });
-      box.querySelectorAll(".chat-header-btn").forEach((btn) => {
+      header.querySelectorAll(".chat-header-btn").forEach((btn) => {
         btn.addEventListener("click", (e) => {
           e.stopPropagation();
           if (btn.dataset.action === "minimize") {
@@ -721,11 +717,6 @@ if (homeRoot) {
         });
       });
 
-      const msgsEl = box.querySelector(".chat-messages");
-      const textInput = box.querySelector(".chat-text-input");
-      const sendBtn = box.querySelector(".chat-action-btn.send");
-      const imgFile = box.querySelector(".chat-img-file");
-
       async function doSend(content, imageUrl) {
         if (!content && !imageUrl) return;
         const loading = msgsEl.querySelector(".chat-loading");
@@ -734,12 +725,13 @@ if (homeRoot) {
           sender_id: currentUserId, receiver_id: uid, content, image_url: imageUrl
         }));
         msgsEl.scrollTop = msgsEl.scrollHeight;
-        await supabaseClient.from("messages").insert({
+        const { error } = await supabaseClient.from("messages").insert({
           sender_id: currentUserId,
           receiver_id: uid,
           content: content || null,
           image_url: imageUrl || null
         });
+        if (error) console.error("[chat send]", error);
       }
 
       sendBtn.addEventListener("click", async () => {
@@ -759,11 +751,12 @@ if (homeRoot) {
         }
       });
 
-      imgFile.addEventListener("change", async (e) => {
-        const file = e.target.files?.[0];
+      imgFileInput.addEventListener("change", async (e) => {
+        const file = e.target.files && e.target.files[0];
         if (!file) return;
         if (file.size > 5 * 1024 * 1024) { alert("Ảnh tối đa 5MB"); e.target.value = ""; return; }
-        const path = `chat/${currentUserId}/${Date.now()}.${file.name.split(".").pop()}`;
+        const ext = file.name.split(".").pop();
+        const path = "chat/" + currentUserId + "/" + Date.now() + "." + ext;
         const { error: upErr } = await supabaseClient.storage
           .from("post-images").upload(path, file, { contentType: file.type });
         if (upErr) { alert("Lỗi upload: " + upErr.message); e.target.value = ""; return; }
@@ -775,6 +768,46 @@ if (homeRoot) {
       loadChatMessages(uid);
       subscribeIncoming();
     }
+
+    // Expose globally để debug nếu cần
+    window._peakOpenChat = openChat;
+
+    // Load friends sidebar
+    const friendsList = document.getElementById("friendsList");
+    if (friendsList) {
+      const { data: friends } = await supabaseClient
+        .from("profiles")
+        .select("id, full_name, username, avatar_url")
+        .neq("id", currentUserId)
+        .limit(10);
+
+      if (!friends || friends.length === 0) {
+        friendsList.innerHTML = "<p class=\"friends-empty\">Chưa có bạn bè nào.<br/>Tính năng kết bạn sắp ra mắt!</p>";
+      } else {
+        friendsList.innerHTML = "";
+        friends.forEach((f) => {
+          const name = f.full_name || f.username || t("post.unknown_user");
+          const avatar = f.avatar_url || getDefaultAvatarUrl(name);
+          const item = document.createElement("a");
+          item.href = "#";
+          item.className = "friend-item";
+          item.innerHTML =
+            "<img src=\"" + escapeHtml(avatar) + "\" alt=\"\" />" +
+            "<span>" + escapeHtml(name) + "</span>";
+          item.addEventListener("click", (e) => {
+            e.preventDefault();
+            openChat(f.id, name, avatar);
+          });
+          friendsList.appendChild(item);
+        });
+      }
+    }
+
+    // Locket tab placeholder
+    document.getElementById("locketTab")?.addEventListener("click", (e) => {
+      e.preventDefault();
+      alert("Locket – Tính năng sắp ra mắt! 📸");
+    });
   })();
 }
 
